@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>LIAS - Rapport Annuel d'Activité</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root { --lias-blue: #004a99; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .main-content-area { margin-left: 280px; padding: 40px; }
+
+        /* Style "Papier Officiel" */
+        .report-paper {
+            background: white;
+            padding: 60px;
+            border-radius: 0;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .report-header { border-bottom: 3px solid var(--lias-blue); padding-bottom: 20px; margin-bottom: 40px; }
+        h4 { color: var(--lias-blue); font-weight: 800; text-transform: uppercase; margin-top: 30px; }
+
+        /* Masquer la sidebar et les boutons à l'impression */
+        @media print {
+            .sidebar-wrapper, .btn-print, .btn-success, .alert { display: none !important; }
+            .main-content-area { margin-left: 0; padding: 0; }
+            .report-paper { box-shadow: none; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='report')}"></div>
+
+<div class="main-content-area">
+    <div class="text-right mb-4">
+        <!-- Bouton Impression / Export PDF natif du navigateur -->
+        <button class="btn btn-primary btn-print rounded-pill px-4 shadow-sm mr-2" onclick="window.print()">
+            <i class="fas fa-print mr-2"></i> Imprimer / Exporter en PDF
+        </button>
+
+        <!-- Bouton de validation visible seulement pour le Directeur -->
+        <button th:if="${canValidateReport}" class="btn btn-success rounded-pill px-4 shadow-sm" onclick="alert('Rapport validé officiellement pour l\'attribution du budget annuel !')">
+            <i class="fas fa-check mr-2"></i> Valider le rapport officiel
+        </button>
+
+        <!-- Message pour le Vice-Directeur -->
+        <div th:if="${!canValidateReport}" class="alert alert-secondary mt-3 d-inline-block py-2 px-3 mb-0" style="border-radius: 10px;">
+            <i class="fas fa-info-circle mr-1"></i> Vous consultez le rapport en mode lecture seule.
+        </div>
+    </div>
+
+    <div class="report-paper">
+        <!-- Entête -->
+        <div class="report-header d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="font-weight-bold mb-0">RAPPORT D'ACTIVITÉ</h2>
+                <p class="text-muted mb-0">Laboratoire d'Intelligence Artificielle et Systèmes (LIAS)</p>
+            </div>
+            <div class="text-right">
+                <h5 class="font-weight-bold">ANNÉE 2026</h5>
+                <small th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}"></small>
+            </div>
+        </div>
+
+        <!-- 1. Résumé Exécutif -->
+        <h4>1. Synthèse du Laboratoire</h4>
+        <div class="row text-center mt-4">
+            <div class="col-3">
+                <h2 class="font-weight-bold text-primary" th:text="${totalMembers}">0</h2>
+                <small class="text-muted font-weight-bold">Membres</small>
+            </div>
+            <div class="col-3">
+                <h2 class="font-weight-bold text-success" th:text="${totalPubs}">0</h2>
+                <small class="text-muted font-weight-bold">Publications</small>
+            </div>
+            <div class="col-3">
+                <h2 class="font-weight-bold text-warning" th:text="${totalEvents}">0</h2>
+                <small class="text-muted font-weight-bold">Événements</small>
+            </div>
+            <div class="col-3">
+                <h2 class="font-weight-bold text-info" th:text="${totalEquipments}">0</h2>
+                <small class="text-muted font-weight-bold">Matériels</small>
+            </div>
+        </div>
+
+        <!-- 2. Ressources Humaines -->
+        <h4>2. Ressources Humaines</h4>
+        <table class="table table-sm mt-3">
+            <thead class="bg-light">
+            <tr><th>Nom complet</th><th>Rôle / Statut</th><th>Date Affiliation</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="m : ${activeMembers}">
+                <td class="font-weight-bold" th:text="|${m.firstName} ${m.lastName}|"></td>
+                <td th:text="${m.role}"></td>
+                <td th:text="${m.dateAffiliation}"></td>
+            </tr>
+            </tbody>
+        </table>
+
+        <!-- 3. Production Scientifique -->
+        <h4>3. Production Scientifique</h4>
+        <ul class="list-group list-group-flush mt-3">
+            <li th:each="p : ${allPublications}" class="list-group-item px-0">
+                <i class="fas fa-bookmark text-primary mr-2"></i>
+                <strong th:text="${p.title}"></strong>
+                <span class="text-muted small" th:text="|(${p.type}, ${p.year})|"></span>
+            </li>
+            <li th:if="${allPublications.empty}" class="list-group-item px-0 text-muted small">
+                Aucune publication enregistrée.
+            </li>
+        </ul>
+
+        <div class="mt-5 pt-5 text-center border-top">
+            <p class="small text-muted font-italic">Ce document constitue la mémoire institutionnelle et le rapport officiel du laboratoire LIAS.</p>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

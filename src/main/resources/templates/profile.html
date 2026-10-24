@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>LIAS - Gestion du profil</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+    .main-content-area { margin-left: 280px; padding: 40px; }
+    .card-profile { border-radius: 30px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+    .form-control-custom { border-radius: 12px; background: #fcfcfc; border: 1px solid #eee; height: 50px; }
+  </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='profile')}"></div>
+
+<div class="main-content-area">
+  <div class="container-fluid">
+    <h2 class="font-weight-bold mb-4">Gestion du profil</h2>
+
+    <div th:if="${message}" class="alert alert-success shadow-sm rounded-lg mb-4" th:text="${message}"></div>
+
+    <div class="card card-profile p-5 bg-white">
+
+      <!-- Affichage du statut (Point 5) -->
+      <div class="alert alert-info mb-4">
+        <strong>Statut :</strong> <span th:text="${user.role}">Membre associé</span>
+      </div>
+
+      <form th:action="@{/profile/update}" th:object="${user}" method="post" enctype="multipart/form-data">
+        <input type="hidden" th:field="*{id}">
+
+        <!-- SECTION AVATAR -->
+        <div class="text-center mb-5">
+          <div class="position-relative d-inline-block">
+            <img id="profilePreview"
+                 th:src="${user.photoPath != null ? '/uploads/' + user.photoPath : 'https://ui-avatars.com/api/?name=' + user.firstName + '+' + user.lastName}"
+                 class="rounded-circle border shadow"
+                 style="width: 130px; height: 130px; object-fit: cover; background: white;">
+            <label for="imageFile" class="position-absolute bg-primary text-white rounded-circle shadow d-flex align-items-center justify-content-center"
+                   style="bottom: 5px; right: 5px; width: 42px; height: 42px; cursor: pointer; border: 3px solid white;">
+              <i class="fas fa-camera"></i>
+            </label>
+            <input type="file" id="imageFile" name="imageFile" style="display: none;" accept="image/*" onchange="previewImage(this)">
+          </div>
+          <p class="small text-muted mt-2">Photo de profil</p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label class="small font-weight-bold text-muted">PRÉNOM</label>
+            <input type="text" th:field="*{firstName}" class="form-control form-control-custom">
+          </div>
+          <div class="form-group col-md-6">
+            <label class="small font-weight-bold text-muted">NOM</label>
+            <input type="text" th:field="*{lastName}" class="form-control form-control-custom">
+          </div>
+        </div>
+
+        <!-- Champs lecture seule (Point 1 & 2) -->
+        <div class="form-row mt-3">
+          <div class="form-group col-md-6">
+            <label class="small font-weight-bold text-muted">ÉTABLISSEMENT</label>
+            <input type="text" class="form-control form-control-custom" th:value="${user.etablissementOrigine}" readonly>
+          </div>
+          <div class="form-group col-md-6">
+            <label class="small font-weight-bold text-muted">LABORATOIRE D'ORIGINE</label>
+            <input type="text" class="form-control form-control-custom" th:value="${user.laboratoireOrigine}" readonly>
+          </div>
+        </div>
+
+        <div class="form-group mt-3">
+          <label class="small font-weight-bold text-muted">CENTRES D'INTÉRÊT</label>
+          <input type="text" th:field="*{centresInteret}" class="form-control form-control-custom">
+        </div>
+
+        <div class="form-group mt-3">
+          <label class="small font-weight-bold text-muted">BIOGRAPHIE</label>
+          <textarea th:field="*{biographie}" class="form-control form-control-custom" rows="4" style="height: auto;"></textarea>
+        </div>
+
+        <!-- Historique des affiliations (Point 6) -->
+        <!--<h5 class="mt-5 mb-3">Historique des affiliations</h5>
+        <table class="table table-striped shadow-sm rounded">
+          <thead class="thead-light">
+          <tr><th>Date début</th><th>Date fin</th><th>Statut</th></tr>
+          </thead>
+          <tbody>
+          <tr th:each="aff : ${historiqueAffiliations}">
+            <td th:text="${aff.dateDebut}"></td>
+            <td th:text="${aff.dateFin ?: 'En cours'}"></td>
+            <td th:text="${aff.statut}"></td>
+          </tr>
+          </tbody>
+        </table>-->
+
+        <!--add-->
+        <!--<h5 class="mt-5 mb-3">Historique des modifications du profil</h5>
+        <table class="table table-striped shadow-sm rounded">
+          <thead class="thead-light">
+          <tr><th>Date</th><th>Champ</th><th>Ancienne</th><th>Nouvelle</th></tr>
+          </thead>
+          <tbody>
+          <tr th:each="h : ${profileHistory}">
+            <td th:text="${#temporals.format(h.dateModification, 'dd/MM/yyyy HH:mm')}"></td>
+            <td th:text="${h.fieldName}"></td>
+            <td th:text="${h.oldValue} ?: '(vide)'"></td>
+            <td th:text="${h.newValue} ?: '(vide)'"></td>
+          </tr>
+          </tbody>
+        </table>-->
+        <!-- 1. Historique des affiliations -->
+        <h5 class="mt-5 mb-3 font-weight-bold">Historique des affiliations</h5>
+        <div class="card border-0 shadow-sm p-0 mb-4" style="border-radius: 15px; overflow: hidden;">
+          <table class="table table-hover mb-0">
+            <thead class="bg-light text-muted small">
+            <tr>
+              <th class="border-0">Date début</th>
+              <th class="border-0">Date fin</th>
+              <th class="border-0">Statut</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- Ici, si votre liste est vide, on affiche une ligne pour montrer le design -->
+            <tr th:if="${historiqueAffiliations == null or historiqueAffiliations.empty}">
+              <td colspan="3" class="text-center text-muted">Aucun historique disponible</td>
+            </tr>
+            <tr th:each="aff : ${historiqueAffiliations}">
+              <td th:text="${aff.dateDebut}"></td>
+              <td th:text="${aff.dateFin ?: 'En cours'}"></td>
+              <td th:text="${aff.statut}"></td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 2. Historique des modifications du profil -->
+        <h5 class="mt-5 mb-3 font-weight-bold">Historique des modifications du profil</h5>
+        <div class="card border-0 shadow-sm p-0" style="border-radius: 15px; overflow: hidden;">
+          <table class="table table-hover mb-0">
+            <thead class="bg-light text-muted small">
+            <tr>
+              <th class="border-0">Date</th>
+              <th class="border-0">Champ</th>
+              <th class="border-0">Ancienne</th>
+              <th class="border-0">Nouvelle</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${profileHistory == null or profileHistory.empty}">
+              <td colspan="4" class="text-center text-muted">Aucune modification enregistrée.</td>
+            </tr>
+            <tr th:each="h : ${profileHistory}">
+              <td th:text="${#temporals.format(h.dateModification, 'dd/MM/yyyy HH:mm')}"></td>
+              <td th:text="${h.fieldName}"></td>
+              <td th:text="${h.oldValue} ?: '(vide)'"></td>
+              <td th:text="${h.newValue} ?: '(vide)'"></td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+        <!--end add -->
+        <div class="text-right mt-5">
+          <button type="submit" class="btn btn-primary px-5 rounded-pill font-weight-bold py-3 shadow-lg">
+            ENREGISTRER LES MODIFICATIONS
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  function previewImage(input) {
+    if (input.files && input.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function(e) { document.getElementById('profilePreview').src = e.target.result; }
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+</script>
+</body>
+</html>

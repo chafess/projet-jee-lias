@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Supervision Publications | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f8f9fa; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #1c1e21; }
+        .main-content { margin-left: 280px; padding: 40px; }
+
+        /* Badge Consultation */
+        .badge-consult { background: #f1f3f5; color: #666; font-size: 0.65rem; padding: 3px 10px; border-radius: 4px; font-weight: 700; text-transform: uppercase; margin-left: 10px; }
+
+        /* Filtres style Image */
+        .filter-select { background: white; border: 1px solid #ddd; border-radius: 12px; height: 50px; font-weight: 600; padding: 0 20px; min-width: 200px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+
+        /* Tableau style Image */
+        .table-container { background: white; border-radius: 20px; border: 1px solid #eef0f2; overflow: hidden; margin-top: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
+        .pub-table thead th { background: white; border: none; font-size: 0.8rem; font-weight: 700; color: #333; padding: 20px; border-bottom: 1px solid #f8fafc; }
+        .pub-table td { vertical-align: middle; padding: 20px; border-top: 1px solid #f8fafc; font-size: 0.9rem; }
+
+        /* Team Pills colorés */
+        .team-pill { padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+        .eq-a { background: #e7f3ff; color: #0a66c2; }
+        .eq-b { background: #e8f5e9; color: #1a8a3a; }
+        .eq-c { background: #f3f0ff; color: #7950f2; }
+        .eq-d { background: #fff0eb; color: #fd7e14; }
+
+        /* Statut Badges */
+        .badge-status { padding: 5px 15px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+        .status-publie { background: #e8f5e9; color: #1a8a3a; }
+        .status-review { background: #fff3e0; color: #b8860b; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='all-publications')}"></div>
+
+<main class="main-content">
+    <header class="mb-5">
+        <h3 class="font-weight-bold mb-1">Publications <span class="badge-consult">Consultation</span></h3>
+        <p class="text-muted small">Vue globale par auteur, année et équipe</p>
+    </header>
+
+    <!-- BARRE DE FILTRES DYNAMIQUE -->
+    <form th:action="@{/directeur/all-publications}" method="get" class="d-flex mb-4">
+        <select name="teamId" class="filter-select mr-3 shadow-sm" onchange="this.form.submit()">
+            <option value="">Toutes les équipes</option>
+            <option th:each="t : ${allTeams}" th:value="${t.id}" th:text="${t.name}" th:selected="${param.teamId != null and param.teamId[0] == t.id.toString()}"></option>
+        </select>
+
+        <select name="year" class="filter-select shadow-sm" onchange="this.form.submit()">
+            <option value="">Toutes les années</option>
+            <option th:each="y : ${allYears}" th:value="${y}" th:text="${y}" th:selected="${param.year != null and param.year[0] == y.toString()}"></option>
+        </select>
+
+        <a th:href="@{/directeur/all-publications}" class="btn btn-link text-muted small ml-3 align-self-center">Réinitialiser</a>
+    </form>
+
+    <!-- TABLEAU DE SUPERVISION -->
+    <div class="table-container shadow-sm">
+        <table class="table pub-table mb-0">
+            <thead>
+            <tr>
+                <th>Titre</th>
+                <th>Auteur(s)</th>
+                <th>Revue</th>
+                <th>Équipe</th>
+                <th>Date</th>
+                <th>Statut</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${publications}">
+                <td class="font-weight-bold" style="max-width: 300px;" th:text="${p.title}">Titre</td>
+                <td>
+                    <div class="font-weight-bold" th:text="${p.author.firstName + ' ' + p.author.lastName}">Nom</div>
+                    <small class="text-muted" th:if="${p.coAuthors != null}" th:text="${p.coAuthors}">Co-auteurs</small>
+                </td>
+                <td class="text-muted font-weight-bold" th:text="${p.journal}">Nature Comp. Sci.</td>
+                <td>
+                        <span th:if="${p.author.team != null}"
+                              th:class="'team-pill ' +
+                                (${p.author.team.name == 'ISDIAC' ? 'eq-a' :
+                                (p.author.team.name == 'SIMA' ? 'eq-b' :
+                                (p.author.team.name == 'SDTIC' ? 'eq-c' : 'eq-d'))})"
+                              th:text="${p.author.team.name}">Eq. A</span>
+                </td>
+                <td class="font-weight-bold" th:text="${p.year}">2026</td>
+                <td>
+                    <span th:if="${p.status == 'Published'}" class="badge-status status-publie">Publié</span>
+                    <span th:if="${p.status == 'Under Review'}" class="badge-status status-review">Sous révision</span>
+                </td>
+            </tr>
+            <!-- Si aucune donnée -->
+            <tr th:if="${publications.empty}">
+                <td colspan="6" class="text-center py-5 text-muted">Aucune publication ne correspond à ces critères.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

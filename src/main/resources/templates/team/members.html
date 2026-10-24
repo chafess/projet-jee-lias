@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Membres de l'équipe | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); }
+        .main-content-area { margin-left: 280px; padding: 40px; }
+
+        /* Design des cartes (identique à l'annuaire) */
+        .member-card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; transition: 0.3s; }
+        .member-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .avatar { width: 50px; height: 50px; background: #e1eaf3; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; }
+        .badge-role { font-size: 0.7rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; background: #f1f5f9; color: #475569; }
+
+        /* Grille responsive */
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='team-members')}"></div>
+
+<div class="main-content-area">
+    <h3 class="font-weight-bold mb-1">Membres de l'équipe : <span th:text="${team.name}"></span></h3>
+    <p class="text-muted mb-4" th:text="${members.size() + ' membre(s)'}"></p>
+
+    <div class="grid-container">
+        <!-- Carte Membre (identique style annuaire) -->
+        <div th:each="m : ${members}" class="member-card">
+            <div class="d-flex align-items-center mb-3">
+                <div class="avatar" th:text="${#strings.substring(m.firstName,0,1) + #strings.substring(m.lastName,0,1)}"></div>
+                <div class="ml-3">
+                    <h6 class="mb-0 font-weight-bold" th:text="${m.firstName + ' ' + m.lastName}">Nom</h6>
+                    <span class="badge-role" th:text="${m.role}">Rôle</span>
+                </div>
+            </div>
+            <p class="small text-muted mb-1"><i class="fas fa-envelope mr-2"></i><span th:text="${m.email}"></span></p>
+            <p class="small text-muted mb-3"><i class="fas fa-calendar-alt mr-2"></i>Affilié le <span th:text="${m.dateAffiliation}"></span></p>
+
+            <a href="#" class="btn btn-outline-primary btn-block btn-sm rounded-pill font-weight-bold">
+                <i class="fas fa-envelope mr-2"></i> Contacter
+            </a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

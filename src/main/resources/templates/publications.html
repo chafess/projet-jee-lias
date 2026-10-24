@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Scientific Feed | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; color: #1c1e21; }
+
+        /* Navbar fix */
+        .navbar { margin-bottom: 0; }
+
+        /* Sidebar Filters */
+        .filter-section { border-radius: 16px; border: none; position: sticky; top: 20px; background: white; }
+        .search-wrapper { position: relative; }
+        .search-icon { position: absolute; left: 15px; top: 12px; color: #adb5bd; }
+        .search-wrapper .form-control { padding-left: 40px; border-radius: 10px; background: #f4f7f9; border: none; height: 40px; }
+        .filter-title { font-size: 0.75rem; font-weight: 800; color: #adb5bd; letter-spacing: 1px; text-transform: uppercase; margin-top: 25px; margin-bottom: 15px; }
+        .filter-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; color: #4b4f56; font-size: 0.9rem; border-radius: 8px; transition: 0.2s; text-decoration: none !important; }
+        .filter-item:hover { background: #f0f2f5; color: #0a66c2; }
+        .filter-item.active { background: #e7f3ff; color: #0a66c2; font-weight: 600; }
+
+        /* Action Bar */
+        .btn-share { background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 8px 20px; font-weight: 700; font-size: 0.9rem; color: #333; transition: 0.2s; }
+        .btn-share:hover { background: #f8f9fa; border-color: #ccc; }
+        .search-input-small { border-radius: 10px; border: 1px solid #e0e0e0; background: #f8f9fa; width: 45px; transition: 0.3s; }
+        .search-input-small:focus { width: 200px; background: white; }
+        .sort-select { border-radius: 10px; border: 1px solid #e0e0e0; padding: 8px 15px; font-weight: 600; font-size: 0.9rem; appearance: none; background: white url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") no-repeat right 0.75rem center/8px 10px; }
+
+        /* Publication Card - EXACT DESIGN */
+        .publication-card { background: white; padding: 25px; border-radius: 16px; border: 1px solid #eef0f2; margin-bottom: 20px; position: relative; transition: 0.2s; }
+        .publication-card:hover { border-color: #d1d9db; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+
+        /* Header logic */
+        .status-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .badge-published { background: #e8f5e9; color: #1a8a3a; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; }
+        .badge-review { background: #fff3e0; color: #b8860b; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; }
+        .badge-status::before { content: '●'; margin-right: 6px; font-size: 8px; }
+        .time-ago { font-size: 0.75rem; color: #9199a1; }
+
+        /* User Identity */
+        .avatar-circle { width: 44px; height: 44px; background: #d0e1fd; color: #0a66c2; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+        .user-name { font-weight: 700; color: #1c1e21; font-size: 0.95rem; line-height: 1.2; }
+        .user-meta { color: #65676b; font-size: 0.8rem; }
+
+        /* Content */
+        .pub-title { color: #0a66c2; font-weight: 700; font-size: 1.15rem; margin: 15px 0 10px 0; line-height: 1.4; }
+        .pub-abstract { color: #4b4f56; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; }
+
+        /* Tags/Pills */
+        .tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .tag-pill { background: #f3f6f8; color: #4b4f56; padding: 5px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; border: 1px solid #e0e4e7; }
+
+        /* Journal Box */
+        .resource-box { background: #f4f7f9; border-radius: 12px; padding: 15px 20px; margin-bottom: 20px; }
+        .resource-info { font-size: 0.85rem; font-weight: 600; color: #333; margin-bottom: 4px; display: flex; align-items: center; }
+        .resource-link { font-size: 0.8rem; color: #0a66c2; font-weight: 500; display: flex; align-items: center; text-decoration: none !important; }
+        .resource-link:hover { color: #004182; }
+
+        /* Footer */
+        .card-footer-custom { border-top: 1px solid #f0f2f5; padding-top: 15px; display: flex; align-items: center; font-size: 0.85rem; color: #65676b; }
+        .footer-icon { margin-right: 10px; color: #9199a1; font-size: 0.9rem; }
+        .co-authors-list { font-weight: 700; color: #333; }
+
+        /* Load More */
+        .btn-load-more { border-radius: 12px; border: 1px solid #ced4da; background: white; color: #333; font-weight: 700; padding: 10px 30px; transition: 0.2s; }
+        .btn-load-more:hover { background: #f8f9fa; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div th:replace="~{fragments/navbar :: header}"></div>
+
+<div class="container py-5" style="max-width: 1100px;">
+    <div class="row">
+
+        <!-- FILTRES GAUCHE -->
+        <aside class="col-lg-3 d-none d-lg-block">
+            <div class="filter-section shadow-sm p-4">
+                <div class="search-wrapper mb-2">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="form-control" placeholder="Search publication">
+                </div>
+
+                <p class="filter-title">Year</p>
+                <a th:href="@{/publications(year=2025)}" class="filter-item" th:classappend="${param.year != null and param.year[0] == '2025' ? 'active' : ''}">
+                    <span>2025</span> <span class="text-muted small" th:text="${count2025}">12</span>
+                </a>
+                <a th:href="@{/publications(year=2024)}" class="filter-item" th:classappend="${param.year != null and param.year[0] == '2024' ? 'active' : ''}">
+                    <span>2024</span> <span class="text-muted small" th:text="${count2024}">15</span>
+                </a>
+
+                <p class="filter-title">Research Team</p>
+                <div th:each="t : ${allTeams}">
+                    <a th:href="@{/publications(teamId=${t.id})}" class="filter-item">
+                        <span th:text="${t.name}">Team</span>
+                        <span class="text-muted small" th:text="${#lists.size(t.members)}">8</span>
+                    </a>
+                </div>
+
+                <div class="mt-4 pt-4 border-top">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-muted font-weight-bold">Total publications</span> <strong th:text="${totalPubs}">47</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span class="text-muted font-weight-bold">Active researchers</span> <strong th:text="${activeResearchers}">18</strong>
+                    </div>
+                </div>
+                <a th:href="@{/publications}" class="btn btn-link btn-sm text-primary mt-3 px-0 font-weight-bold">Clear all filters</a>
+            </div>
+        </aside>
+
+        <!-- FEED CENTRAL -->
+        <main class="col-lg-9">
+            <!-- Header de section -->
+            <div class="d-flex justify-content-between align-items-center mb-4 pl-2">
+                <div>
+                    <h4 class="font-weight-bold mb-0">Scientific feed</h4>
+                    <p class="text-muted small">Latest research from LIAS laboratory</p>
+                </div>
+                <div class="d-flex align-items-center">
+                    <!--<button class="btn btn-share shadow-sm mr-2" onclick="window.location.href='/login'">
+                        <i class="fas fa-plus mr-2 text-primary" style="font-size: 12px;"></i> Share research
+                    </button>-->
+                    <!-- Si connecté : Va directement sur l'espace d'ajout de ses publications -->
+                    <a th:if="${user != null}" th:href="@{/member/my-publications}" class="btn btn-share shadow-sm mr-2 text-decoration-none">
+                        <i class="fas fa-plus mr-2 text-primary" style="font-size: 12px;"></i> Share research
+                    </a>
+
+                    <!-- Si non connecté : Invite à se connecter d'abord -->
+                    <a th:if="${user == null}" th:href="@{/login}" class="btn btn-share shadow-sm mr-2 text-decoration-none">
+                        <i class="fas fa-sign-in-alt mr-2 text-primary" style="font-size: 12px;"></i> Connexion pour publier
+                    </a>
+                    <div class="search-wrapper mr-2">
+                        <input type="text" class="form-control search-input-small" placeholder="Search...">
+                    </div>
+                    <select class="sort-select shadow-sm">
+                        <option>Latest first</option>
+                        <option>Oldest first</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- CARTE DE PUBLICATION -->
+            <div th:each="p : ${allPublications}" class="publication-card shadow-sm">
+                <!-- Ligne de Statut -->
+                <div class="status-row">
+                    <span th:class="${p.status == 'Published' ? 'badge-published badge-status' : 'badge-review badge-status'}"
+                          th:text="${p.status}">Published</span>
+                    <span class="time-ago font-weight-bold" th:text="${p.year}">2 hours ago</span>
+                </div>
+
+                <!-- Identité de l'Auteur -->
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar-circle mr-3 shadow-sm"
+                         th:text="${(p.author.firstName != null ? p.author.firstName.substring(0,1) : '') + (p.author.lastName != null ? p.author.lastName.substring(0,1) : '')}">KA</div>
+                    <div>
+                        <div class="user-name" th:text="${p.author.firstName + ' ' + p.author.lastName}">Kawter Ait Omar</div>
+                        <div class="user-meta">
+                            <span th:text="${p.author.role}">PhD Student</span> ·
+                            <span th:text="${p.author.team != null ? p.author.team.name : 'AI Research'}">AI Research</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenu (Titre + Abstract) -->
+                <h5 class="pub-title" th:text="${p.title}">Breast cancer therapy prediction using deep learning</h5>
+                <p class="pub-abstract" th:if="${p.abstractText != null}" th:text="${#strings.abbreviate(p.abstractText, 180)}">
+                    A novel CNN architecture for predicting breast cancer outcomes and treatment response...
+                </p>
+
+                <!-- Tags Dynamiques (basés sur le type) -->
+                <div class="tag-container">
+                    <span class="tag-pill" th:text="${p.type}">Deep Learning</span>
+                    <span class="tag-pill" th:if="${p.author.team != null}" th:text="${p.author.team.name}">Oncology</span>
+                    <span class="tag-pill">Research</span>
+                </div>
+
+                <!-- Bloc Journal / DOI -->
+                <div class="resource-box">
+                    <div class="resource-info">
+                        <i class="far fa-copy mr-2 text-muted"></i>
+                        <span th:text="${p.journal + ' · ' + p.year + (p.volume != null ? ' · ' + p.volume : '')}">iJOE International Journal · 2024 · Vol 20, Issue 7</span>
+                    </div>
+                    <a th:if="${p.doi != null}" th:href="${p.doi}" target="_blank" class="resource-link">
+                        <i class="fas fa-link mr-2"></i>
+                        <span th:text="${'doi.org/' + p.doi}">doi.org/10.3991/ijoe.v20i07.49709</span>
+                    </a>
+                </div>
+
+                <!-- Co-authors Footer -->
+                <div class="card-footer-custom">
+                    <i class="fas fa-users-cog footer-icon"></i>
+                    <span>With <span class="co-authors-list" th:text="${p.coAuthors}">Sanaa El Filali, Habib Ben Lahmar, Ihsane Haloum</span></span>
+                </div>
+            </div>
+
+            <!-- Bouton Load More -->
+            <div class="text-center mt-5">
+                <button class="btn btn-load-more shadow-sm">
+                    Load more (8)
+                </button>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

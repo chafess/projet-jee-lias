@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Statistiques d'usage | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f8f9fa; --text: #1c1e21; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); }
+        .main-content { margin-left: 280px; padding: 40px; }
+
+        /* Style des Cartes */
+        .stat-card { background: white; border-radius: 20px; border: 1px solid #eef0f2; padding: 25px; height: 100%; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+
+        /* Bar Chart Dynamique */
+        .chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 150px; margin-top: 30px; padding: 0 10px; }
+        .bar-wrapper { display: flex; flex-direction: column; align-items: center; width: 32px; }
+        .bar { width: 100%; background: #bad6f7; border-radius: 6px 6px 0 0; transition: height 1s ease-in-out; position: relative; }
+        .bar.active { background: var(--primary); }
+        .bar-value { font-size: 0.7rem; font-weight: 800; color: var(--primary); margin-bottom: 5px; }
+        .bar-day { font-size: 0.75rem; font-weight: 700; color: #adb5bd; margin-top: 10px; }
+
+        /* Usage Progress Bars */
+        .usage-item { margin-bottom: 22px; }
+        .usage-label { font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .progress { height: 8px; border-radius: 10px; background: #f0f2f5; border: none; }
+        .progress-bar { border-radius: 10px; transition: width 1s ease-in-out; }
+
+        /* Volume Box Grid */
+        .volume-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 20px; }
+        .vol-item h4 { font-weight: 800; font-size: 1.6rem; margin-bottom: 2px; }
+        .vol-label { font-size: 0.75rem; color: #99a1ad; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Menu contextuel */
+        .more-btn { background: none; border: none; color: #ccc; position: absolute; top: 20px; right: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='usage-stats')}"></div>
+
+<main class="main-content">
+    <header class="mb-5">
+        <h3 class="font-weight-bold mb-1">Statistiques d'usage</h3>
+        <p class="text-muted small">Mesure de l'activité réelle du laboratoire LIAS</p>
+    </header>
+
+    <div class="row mb-5">
+        <!-- 1. GRAPHIQUE DES CONNEXIONS -->
+        <div class="col-lg-6">
+            <div class="stat-card shadow-sm">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3 text-primary"><i class="fas fa-chart-line fa-lg"></i></div>
+                    <h6 class="font-weight-bold mb-0">Connexions — 7 derniers jours</h6>
+                </div>
+
+                <div class="chart-container">
+                    <div class="bar-wrapper"> <span class="bar-value" th:text="${valL}">0</span> <div class="bar" th:style="'height:' + (${valL} * 4) + 'px'"></div> <span class="bar-day">L</span> </div>
+                    <div class="bar-wrapper"> <span class="bar-value" th:text="${valM}">0</span> <div class="bar" th:style="'height:' + (${valM} * 4) + 'px'"></div> <span class="bar-day">M</span> </div>
+                    <div class="bar-wrapper"> <span class="bar-value" th:text="${valMe}">0</span> <div class="bar" th:style="'height:' + (${valMe} * 4) + 'px'"></div> <span class="bar-day">Me</span> </div>
+                    <div class="bar-wrapper"> <span class="bar-value" th:text="${valJ}">0</span> <div class="bar active" th:style="'height:' + (${valJ} * 4) + 'px'"></div> <span class="bar-day">J</span> </div>
+                    <div class="bar-wrapper"> <span class="bar-value" th:text="${valV}">0</span> <div class="bar" th:style="'height:' + (${valV} * 4) + 'px'"></div> <span class="bar-day">V</span> </div>
+                    <div class="bar-wrapper"> <span class="bar-value" th:text="${valS}">0</span> <div class="bar" th:style="'height:' + (${valS} * 4) + 'px'"></div> <span class="bar-day">S</span> </div>
+                    <div class="bar-wrapper"> <span class="bar-value" th:text="${valAj}">0</span> <div class="bar" th:style="'height:' + (${valAj} * 4) + 'px'"></div> <span class="bar-day">Aj.</span> </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. USAGE PAR MODULE DYNAMIQUE -->
+        <div class="col-lg-6">
+            <div class="stat-card shadow-sm">
+                <button class="more-btn"><i class="fas fa-ellipsis-h"></i></button>
+
+                <div class="d-flex align-items-center mb-4">
+                    <div class="mr-3 text-primary"><i class="fas fa-layer-group fa-lg"></i></div>
+                    <h6 class="font-weight-bold mb-0">Taux d'usage par module</h6>
+                </div>
+
+                <div class="usage-item">
+                    <div class="usage-label"><span>Module Publications</span> <span class="text-primary" th:text="${usagePubs + '%'}">0%</span></div>
+                    <div class="progress"><div class="progress-bar bg-primary" th:style="'width:' + ${usagePubs} + '%'"></div></div>
+                </div>
+                <div class="usage-item">
+                    <div class="usage-label"><span>Module Matériel</span> <span style="color:#7c4dff" th:text="${usageMateriel + '%'}">0%</span></div>
+                    <div class="progress"><div class="progress-bar" style="background:#7c4dff" th:style="'width:' + ${usageMateriel} + '%'"></div></div>
+                </div>
+                <div class="usage-item">
+                    <div class="usage-label"><span>Module Événements</span> <span style="color:#00b894" th:text="${usageEvents + '%'}">0%</span></div>
+                    <div class="progress"><div class="progress-bar" style="background:#00b894" th:style="'width:' + ${usageEvents} + '%'"></div></div>
+                </div>
+                <div class="usage-item">
+                    <div class="usage-label"><span>Activity Feed</span> <span style="color:#d35400" th:text="${usageFeed + '%'}">0%</span></div>
+                    <div class="progress"><div class="progress-bar" style="background:#d35400" th:style="'width:' + ${usageFeed} + '%'"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. VOLUME DE DONNÉES -->
+    <div class="row">
+        <div class="col-12">
+            <div class="stat-card shadow-sm">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="mr-3 text-primary"><i class="fas fa-database fa-lg"></i></div>
+                    <h6 class="font-weight-bold mb-0">Volumes de données stockées</h6>
+                </div>
+
+                <div class="volume-grid">
+                    <div class="vol-item">
+                        <span class="vol-label">Publications</span>
+                        <h4 class="text-primary" th:text="${totalPubs}">0</h4>
+                    </div>
+                    <div class="vol-item">
+                        <span class="vol-label">Rapports & PV</span>
+                        <h4 style="color:#7c4dff" th:text="${totalRapports}">0</h4>
+                    </div>
+                    <div class="vol-item">
+                        <span class="vol-label">Fichiers uploadés</span>
+                        <h4 style="color:#00b894" th:text="${totalFiles}">0</h4>
+                    </div>
+                    <div class="vol-item">
+                        <span class="vol-label">Stockage estimé</span>
+                        <h4 style="color:#2e7d32" th:text="${totalStorage + ' Mo'}">0 Mo</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

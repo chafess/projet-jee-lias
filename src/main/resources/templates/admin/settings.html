@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Paramétrage | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /*:root { --primary: #0a66c2; --bg: #f8f9fa; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #1c1e21; }
+        .main-content { margin-left: 280px; padding: 40px; }
+
+        .stat-card { background: white; border-radius: 20px; border: 1px solid #eef0f2; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .card-title { font-weight: 700; font-size: 1rem; margin-bottom: 20px; display: flex; align-items: center; }
+        .card-title i { width: 35px; color: var(--primary); }
+
+        .form-group label { font-size: 0.85rem; font-weight: 600; color: #4b4f56; }
+        .input-modern { background: #f4f7f9; border: none; border-radius: 10px; height: 45px; font-weight: 700; color: #333; }
+
+        /* Toggle Switch Réparé et Cliquable */
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; margin-bottom: 0; cursor: pointer; }
+        .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+        /* Quand la case est cochée (Actif = Bleu) */
+        input:checked + .slider { background-color: var(--primary) !important; }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .module-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f8fafc; }
+        .perm-badge { font-size: 0.7rem; font-weight: 700; padding: 4px 12px; border-radius: 6px; }*/
+    <style>
+        :root { --primary: #0a66c2; --bg: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #1c1e21; }
+        .main-content { margin-left: 280px; padding: 40px; }
+
+        .stat-card { background: white; border-radius: 20px; border: 1px solid #eef0f2; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .card-title { font-weight: 700; font-size: 1rem; margin-bottom: 20px; display: flex; align-items: center; }
+        .card-title i { width: 35px; color: var(--primary); }
+
+        .form-group label { font-size: 0.85rem; font-weight: 600; color: #4b4f56; }
+        .input-modern { background: #f4f7f9; border: none; border-radius: 10px; height: 45px; font-weight: 700; color: #333; }
+
+        /* Style des lignes de modules */
+        .module-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f8fafc; }
+        .perm-badge { font-size: 0.7rem; font-weight: 700; padding: 4px 12px; border-radius: 6px; }
+
+        /* Agrandir le switch Bootstrap pour qu'il soit bien visible et classe */
+        .custom-switch .custom-control-label { cursor: pointer; }
+        .custom-switch .custom-control-input:checked ~ .custom-control-label::before {
+            background-color: var(--primary) !important;
+            border-color: var(--primary) !important;
+        }
+        .custom-switch .custom-control-label::before {
+            height: 22px; width: 44px; border-radius: 20px;
+        }
+        .custom-switch .custom-control-label::after {
+            width: 18px; height: 18px; border-radius: 50%;
+        }
+        .custom-switch .custom-control-input:checked ~ .custom-control-label::after {
+            transform: translateX(22px);
+        }
+    </style>
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='settings')}"></div>
+
+<main class="main-content">
+    <header class="mb-5 d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="font-weight-bold mb-1">Paramétrage</h3>
+            <p class="text-muted small">Rôles, permissions, configuration des modules</p>
+        </div>
+        <button form="settingsForm" type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm font-weight-bold">
+            Enregistrer les modifications
+        </button>
+    </header>
+
+    <div th:if="${message}" class="alert alert-success border-0 shadow-sm mb-4" style="border-radius: 15px;" th:text="${message}"></div>
+
+    <form id="settingsForm" th:action="@{/admin/settings/save}" th:object="${settings}" method="post">
+        <input type="hidden" th:field="*{id}">
+
+        <!-- ================= PREMIÈRE LIGNE (HAUT) ================= -->
+        <div class="row">
+            <!-- 1. SERVEUR & STOCKAGE (GAUCHE) -->
+            <div class="col-lg-6">
+                <div class="stat-card">
+                    <div class="card-title"><i class="fas fa-server"></i> Serveur & stockage</div>
+                    <div class="form-group">
+                        <label>Chemin des uploads</label>
+                        <input type="text" th:field="*{uploadPath}" class="form-control input-modern">
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small font-weight-bold">Base de données MySQL</span>
+                        <span class="text-success small font-weight-bold">● Connectée OK</span>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Stockage max (Go)</label>
+                        <input type="number" th:field="*{maxStorage}" class="form-control input-modern w-50">
+                    </div>
+                    <div class="form-group mb-0">
+                        <label>Durée de rétention des sauvegardes (jours)</label>
+                        <input type="number" th:field="*{retentionDays}" class="form-control input-modern w-50">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. MODULES ACTIFS (DROITE) -->
+            <div class="col-lg-6">
+                <div class="stat-card">
+                    <div class="card-title"><i class="fas fa-cubes"></i> Modules actifs</div>
+
+                    <div class="module-item">
+                        <span class="small font-weight-bold">Publications</span>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" th:field="*{modulePubs}" class="custom-control-input" id="swPubs">
+                            <label class="custom-control-label" for="swPubs"></label>
+                        </div>
+                    </div>
+
+                    <div class="module-item">
+                        <span class="small font-weight-bold">Gestion du matériel</span>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" th:field="*{moduleMateriel}" class="custom-control-input" id="swMat">
+                            <label class="custom-control-label" for="swMat"></label>
+                        </div>
+                    </div>
+
+                    <div class="module-item">
+                        <span class="small font-weight-bold">Événements</span>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" th:field="*{moduleEvents}" class="custom-control-input" id="swEvents">
+                            <label class="custom-control-label" for="swEvents"></label>
+                        </div>
+                    </div>
+
+                    <div class="module-item">
+                        <span class="small font-weight-bold">Actualités & Feed</span>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" th:field="*{moduleFeed}" class="custom-control-input" id="swFeed">
+                            <label class="custom-control-label" for="swFeed"></label>
+                        </div>
+                    </div>
+
+                    <div class="module-item">
+                        <span class="small font-weight-bold">Annuaire membres</span>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" th:field="*{moduleAnnuaire}" class="custom-control-input" id="swAnnuaire">
+                            <label class="custom-control-label" for="swAnnuaire"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= DEUXIÈME LIGNE (BAS) : SÉCURITÉ À CÔTÉ DE RÔLES ================= -->
+        <div class="row">
+            <!-- 3. SÉCURITÉ (GAUCHE) -->
+            <div class="col-lg-6">
+                <div class="stat-card">
+                    <div class="card-title"><i class="fas fa-shield-alt"></i> Sécurité</div>
+                    <div class="form-group">
+                        <label>Tentatives max avant blocage</label>
+                        <input type="number" th:field="*{maxLoginAttempts}" class="form-control input-modern">
+                    </div>
+                    <div class="form-group">
+                        <label>Durée de session (min)</label>
+                        <input type="number" th:field="*{sessionDuration}" class="form-control input-modern">
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small font-weight-bold">Double authentification</span>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" th:field="*{doubleAuth}" class="custom-control-input" id="sw2FA">
+                            <label class="custom-control-label" for="sw2FA"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. RÔLES & PERMISSIONS (DROITE : EXACTEMENT À CÔTÉ !) -->
+            <div class="col-lg-6">
+                <div class="stat-card">
+                    <div class="card-title"><i class="fas fa-users-cog"></i> Rôles & permissions</div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small font-weight-bold">Permanent</span>
+                        <span class="perm-badge" style="background:#e3f2fd; color:#0a66c2;">Lecture + Écriture</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small font-weight-bold">Doctorant</span>
+                        <span class="perm-badge" style="background:#e3f2fd; color:#0a66c2;">Lecture + Écriture</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small font-weight-bold">Retraité</span>
+                        <span class="perm-badge" style="background:#fff3e0; color:#b8860b;">Lecture seule</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small font-weight-bold">Admin</span>
+                        <span class="perm-badge" style="background:#ffebee; color:#c62828;">Accès total</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </form>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

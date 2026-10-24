@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion des comptes | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f3f6f8; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); }
+        .main-content { margin-left: 280px; padding: 40px; }
+
+        /* Table Design */
+        .table-container { background: white; border-radius: 16px; border: none; overflow: hidden; }
+        .member-row:hover { background-color: #fafbfc; }
+        .table thead th { background: #fdfaf5; border: none; font-size: 0.75rem; font-weight: 800; color: #888; text-transform: uppercase; padding: 15px 20px; }
+        .table td { vertical-align: middle; padding: 18px 20px; border-top: 1px solid #f1f3f5; font-size: 0.9rem; }
+
+        /* Badges Statut */
+        .badge-status { padding: 4px 12px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; }
+        .status-actif { background: #e8f5e9; color: #1a8a3a; }
+        .status-gele { background: #fff3e0; color: #b8860b; }
+        .status-alerte { background: #ffebee; color: #c62828; }
+
+        /* Filtres */
+        .filter-box { background: white; border: 1px solid #e0e0e0; border-radius: 10px; height: 40px; font-weight: 600; font-size: 0.85rem; }
+        .search-input { background: white url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='%23adb5bd' d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3e%3c/svg%3e") no-repeat left 0.75rem center/16px 16px; padding-left: 2.5rem; }
+
+        .btn-create { background: var(--primary); color: white; border-radius: 10px; font-weight: 700; padding: 8px 20px; border: none; }
+        .btn-action { background: white; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 0.8rem; font-weight: 600; padding: 5px 12px; color: #444; }
+        .btn-action:hover { background: #f8f9fa; border-color: #ccc; }
+
+        /* Modal */
+        .modal-content { border-radius: 20px; border: none; padding: 10px; }
+        .form-label { font-size: 0.8rem; font-weight: 700; color: #555; margin-bottom: 5px; }
+        .form-control-custom { border-radius: 10px; background: #f4f7f9; border: 1px solid #eee; padding: 10px 15px; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='members')}"></div>
+
+<main class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="font-weight-bold mb-1">Gestion des comptes</h4>
+            <p class="text-muted small mb-0">Créer, modifier, geler, désactiver, réactiver</p>
+        </div>
+        <button class="btn btn-create shadow-sm" onclick="$('#createModal').modal('show')">
+            <i class="fas fa-user-plus mr-2"></i> Créer
+        </button>
+    </div>
+
+    <!-- BARRE DE RECHERCHE ET FILTRES -->
+    <form th:action="@{/admin/members}" method="get" class="row no-gutters mb-4">
+        <div class="col-md-4 pr-2">
+            <input type="text" name="search" class="form-control filter-box search-input" placeholder="Rechercher par nom ou email...">
+        </div>
+        <div class="col-md-3 pr-2">
+            <select name="role" class="form-control filter-box" onchange="this.form.submit()">
+                <option>Tous les rôles</option>
+                <option value="MEMBRE_PERMANENT">Permanent</option>
+                <option value="DOCTORANT">Doctorant</option>
+                <option value="RETRAITE">Retraité</option>
+                <option value="ADMINISTRATEUR">Admin</option>
+            </select>
+        </div>
+        <div class="col-md-3 pr-2">
+            <select name="status" class="form-control filter-box" onchange="this.form.submit()">
+                <option>Tous les statuts</option>
+                <option value="Actif">Actif</option>
+                <option value="Gelé">Gelé</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <a th:href="@{/admin/members}" class="btn btn-light btn-block filter-box d-flex align-items-center justify-content-center">Réinitialiser</a>
+        </div>
+    </form>
+
+    <!-- TABLEAU DES MEMBRES -->
+    <div class="table-container shadow-sm">
+        <table class="table mb-0">
+            <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Rôle</th>
+                <th>Équipe</th>
+                <th>Statut</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <!--<tbody>
+            <tr th:each="m : ${members}" class="member-row">
+                <td><strong class="text-dark" th:text="${m.firstName + ' ' + m.lastName}">Nom</strong></td>
+                <td class="text-muted" th:text="${m.email}">email@lias.dz</td>
+                <td><span th:text="${m.role}">Permanent</span></td>
+                <td><span th:text="${m.team != null ? m.team.name : '—'}">Équipe A</span></td>
+                <td>
+                    <span th:if="${m.active}" class="badge-status status-actif">Actif</span>
+                    <span th:if="${!m.active}" class="badge-status status-gele">Gelé</span>
+                </td>
+                <td>
+                    <div class="d-flex">
+                        <button class="btn-action mr-2">Modifier</button>
+                        <form th:action="@{'/admin/members/toggle-status/' + ${m.id}}" method="post">
+                            <button type="submit" class="btn-action" th:text="${m.active ? 'Geler' : 'Réactiver'}">Action</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            </tbody>-->
+            <!--<tbody>
+            <tr th:each="m : ${members}" class="member-row">
+                <td><strong class="text-dark" th:text="${m.firstName + ' ' + m.lastName}">Nom</strong></td>
+                <td class="text-muted" th:text="${m.email}">email@lias.dz</td>
+                <td><span th:text="${m.role}">Permanent</span></td>
+                <td><span th:text="${m.team != null ? m.team.name : '—'}">Équipe A</span></td>
+                <td>
+                    <span th:if="${m.active}" class="badge-status status-actif">Actif</span>
+                    <span th:if="${!m.active}" class="badge-status status-gele">Gelé</span>
+                </td>
+                <td>
+                    <div class="d-flex">
+                        <button class="btn-action mr-2">Modifier</button>
+
+                        <form th:action="@{'/admin/members/toggle-status/' + ${m.id}}" method="post">
+                            <button type="submit" class="btn-action mr-2" th:text="${m.active ? 'Geler' : 'Réactiver'}"></button>
+                        </form>
+
+                        <form th:action="@{'/admin/members/reset-password/' + ${m.id}}" method="post"
+                              onsubmit="return confirm('Confirmer la réinitialisation du mot de passe ?');">
+                            <button type="submit" class="btn btn-action text-warning">
+                                <i class="fas fa-key"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            </tbody>-->
+            <tbody>
+            <tr th:each="m : ${members}" class="member-row">
+                <td><strong class="text-dark" th:text="${m.firstName + ' ' + m.lastName}">Nom</strong></td>
+                <td class="text-muted" th:text="${m.email}">email@lias.dz</td>
+                <td><span th:text="${m.role}">Permanent</span></td>
+                <td><span th:text="${m.team != null ? m.team.name : '—'}">Équipe A</span></td>
+
+                <!-- COLONNE STATUT MODIFIÉE -->
+                <td>
+                    <span th:if="${m.status == 'ACTIF' or (m.status == null and m.active)}" class="badge-status status-actif">Actif</span>
+                    <span th:if="${m.status == 'RETRAITE'}" class="badge-status status-gele">Retraité (gelé)</span>
+                    <span th:if="${m.status == 'ANCIEN_MEMBRE' or (m.status == null and !m.active)}" class="badge-status status-alerte">Ancien membre</span>
+                </td>
+
+                <!-- COLONNE ACTIONS MODIFIÉE (Nouveaux boutons Retraite / Désactiver / Réactiver) -->
+                <td>
+                    <div class="d-flex align-items-center">
+                        <!-- Actions si le membre est ACTIF -->
+                        <div th:if="${m.status == 'ACTIF' or (m.status == null and m.active)}" class="d-flex">
+                            <form th:action="@{'/admin/members/retire/' + ${m.id}}" method="post" class="mr-1">
+                                <button type="submit" class="btn-action text-warning" onclick="return confirm('Mettre ce membre à la retraite ? Compte gelé définitivement.');">Retraite</button>
+                            </form>
+                            <form th:action="@{'/admin/members/deactivate/' + ${m.id}}" method="post" class="mr-1">
+                                <button type="submit" class="btn-action text-danger" onclick="return confirm('Désactiver ce membre (Ancien membre) ?');">Désactiver</button>
+                            </form>
+                        </div>
+
+                        <!-- Action si le membre est un ANCIEN MEMBRE (Réactivable) -->
+                        <div th:if="${m.status == 'ANCIEN_MEMBRE' or (m.status == null and !m.active)}" class="mr-1">
+                            <form th:action="@{'/admin/members/reactivate/' + ${m.id}}" method="post">
+                                <button type="submit" class="btn-action text-success">Réactiver</button>
+                            </form>
+                        </div>
+
+                        <!-- Message si RETRAITÉ (Gelé définitivement) -->
+                        <span th:if="${m.status == 'RETRAITE'}" class="small text-muted font-italic mr-2">
+                            Gelé
+                        </span>
+
+                        <!-- Bouton Réinitialiser Mot de passe (Clé) -->
+                        <form th:action="@{'/admin/members/reset-password/' + ${m.id}}" method="post"
+                              onsubmit="return confirm('Confirmer la réinitialisation du mot de passe ?');">
+                            <button type="submit" class="btn btn-action text-warning p-1" title="Réinitialiser mot de passe">
+                                <i class="fas fa-key"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<!-- MODALE DE CRÉATION -->
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header border-0">
+                <h6 class="modal-title font-weight-bold"><i class="fas fa-user-plus text-primary mr-2"></i> Créer un utilisateur</h6>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form th:action="@{/admin/members/create}" method="post">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Prénom</label>
+                        <input type="text" name="firstName" class="form-control form-control-custom" placeholder="Ex: Fatima" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nom</label>
+                        <input type="text" name="lastName" class="form-control form-control-custom" placeholder="Ex: Alaoui" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control form-control-custom" placeholder="f.alaoui@lias.dz" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="form-label">Rôle</label>
+                            <select name="role" class="form-control form-control-custom">
+                                <option value="MEMBRE_PERMANENT">Permanent</option>
+                                <option value="DOCTORANT">Doctorant</option>
+                                <option value="ADMINISTRATEUR">Administrateur</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="form-label">Équipe</label>
+                            <select name="team.id" class="form-control form-control-custom">
+                                <option th:each="t : ${allTeams}" th:value="${t.id}" th:text="${t.name}">Équipe A</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Créer le compte</button>
+                </div>
+                <!-- Dans votre tableau admin/members.html, dans la colonne des actions -->
+                <!--<td>
+                    <form th:action="@{'/admin/members/reset-password/' + ${m.id}}" method="post">
+                        <button type="submit" class="btn btn-sm btn-warning"
+                                onclick="return confirm('Confirmer la réinitialisation ?');">
+                            <i class="fas fa-key"></i> Réinitialiser
+                        </button>
+                    </form>
+                </td>-->
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

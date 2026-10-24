@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Journal d'activité | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f8f9fa; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #1c1e21; }
+        .main-content { margin-left: 280px; padding: 40px; }
+
+        .log-card { background: white; border-radius: 20px; border: 1px solid #eef0f2; padding: 0; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+
+        /* Table Style */
+        .log-table thead th { background: #fafbfc; border: none; font-size: 0.75rem; font-weight: 800; color: #888; text-transform: uppercase; padding: 15px 25px; }
+        .log-table td { vertical-align: middle; padding: 18px 25px; border-top: 1px solid #f8fafc; font-size: 0.9rem; }
+
+        /* Badges de Type (Exactement comme l'image) */
+        .badge-log { padding: 4px 12px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
+        .type-compte { background: #e8f5e9; color: #1a8a3a; }
+        .type-securite { background: #ffebee; color: #c62828; }
+        .type-sauvegarde { background: #e3f2fd; color: #0a66c2; }
+        .type-mandat { background: #f3f0ff; color: #7950f2; }
+
+        .filter-select { border-radius: 12px; border: 1.5px solid #eee; height: 45px; font-weight: 600; padding: 0 15px; width: 250px; margin-bottom: 25px; }
+        .type-event { background: #e0f2fe; color: #0284c7; }
+        .type-materiel { background: #fef3c7; color: #d97706; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='logs')}"></div>
+
+<main class="main-content">
+    <header class="mb-4">
+        <h3 class="font-weight-bold mb-1">Journal d'activité</h3>
+        <p class="text-muted small">Logs horodatés de toutes les actions sensibles</p>
+    </header>
+
+    <!-- FILTRE PAR TYPE -->
+    <!--<form th:action="@{/admin/logs}" method="get">
+        <select name="type" class="filter-select shadow-sm" onchange="this.form.submit()">
+            <option value="Tous">Tous les types</option>
+            <option value="Compte">Compte</option>
+            <option value="Connexion">Connexion</option>
+            <option value="Mandat">Mandat</option>
+            <option value="Sauvegarde">Sauvegarde</option>
+        </select>
+    </form>-->
+    <!-- FILTRE PAR TYPE (Avec sélection conservée) -->
+    <form th:action="@{/admin/logs}" method="get">
+        <select name="type" class="filter-select shadow-sm" onchange="this.form.submit()">
+            <option value="Tous" th:selected="${currentType == 'Tous' or currentType == null}">Tous les types</option>
+            <option value="Compte" th:selected="${currentType == 'Compte'}">Compte</option>
+            <option value="Connexion" th:selected="${currentType == 'Connexion'}">Connexion</option>
+            <option value="Mandat" th:selected="${currentType == 'Mandat'}">Mandat</option>
+            <option value="Sauvegarde" th:selected="${currentType == 'Sauvegarde'}">Sauvegarde</option>
+        </select>
+    </form>
+
+    <div class="log-card shadow-sm">
+        <table class="table log-table mb-0">
+            <thead>
+            <tr>
+                <th>Date / Heure</th>
+                <th>Type</th>
+                <th>Action</th>
+                <th>Acteur</th>
+                <th>Cible</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="log : ${logs}">
+                <!--<td class="font-weight-bold text-muted" th:text="${#temporals.format(log.timestamp, 'dd juin — HH:mm')}">19 juin — 09:14</td>-->
+                <td class="font-weight-bold text-muted" th:text="${#temporals.format(log.timestamp, 'dd MMM — HH:mm')}">19 juin — 09:14</td>
+
+                <!--<td>
+                        <span th:class="'badge-log ' +
+                            (${log.type == 'Compte' ? 'type-compte' :
+                            (log.type == 'Sécurité' ? 'type-securite' :
+                            (log.type == 'Sauvegarde' ? 'type-sauvegarde' : 'type-mandat'))})"
+                              th:text="${log.type}">Type</span>
+                </td>-->
+                <td>
+                    <span th:class="'badge-log ' +
+                        (${log.type == 'Compte' ? 'type-compte' :
+                        (log.type == 'Sécurité' ? 'type-securite' :
+                        (log.type == 'Sauvegarde' ? 'type-sauvegarde' :
+                        (log.type == 'Mandat' ? 'type-mandat' : 'type-event')))})"
+                          th:text="${log.type}">Type</span>
+                </td>
+                <td class="font-weight-bold" style="max-width: 300px;" th:text="${log.action}">Action réalisée</td>
+                <td th:text="${log.acteur}">Acteur</td>
+                <td class="font-weight-bold" th:text="${log.cible}">Cible</td>
+            </tr>
+            <tr th:if="${logs.empty}">
+                <td colspan="5" class="text-center py-5 text-muted">Aucun log enregistré.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

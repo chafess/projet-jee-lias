@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Mes Besoins Matériel | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f8f9fa; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg) !important; color: #1c1e21; }
+        .main-content { margin-left: 280px; padding: 40px; transition: 0.3s; }
+
+        /* Header Button */
+        .btn-new-request { background: white; border: 1.5px solid #333; border-radius: 12px; padding: 10px 25px; font-weight: 700; color: #333; transition: 0.2s; }
+        .btn-new-request:hover { background: #1c1e21; color: white; }
+
+        /* Card Table Style */
+        .history-card { background: white; border-radius: 20px; border: 1px solid #eef0f2; padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .table thead th { border: none; font-size: 0.75rem; font-weight: 800; color: #888; text-transform: uppercase; padding: 20px; }
+        .table td { vertical-align: middle; padding: 20px; border-top: 1px solid #f8fafc; font-size: 0.9rem; }
+
+        /* Status Badges */
+        .badge-status { padding: 5px 15px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; }
+        .status-received { background: #e8f5e9; color: #1a8a3a; } /* Vert : Reçu */
+        .status-pending { background: #fff3e0; color: #b8860b; }  /* Orange : En attente */
+
+        .response-text { font-size: 0.85rem; font-weight: 600; color: #1a8a3a; }
+        .response-pending { color: #9199a1; font-style: italic; }
+
+        /* Modal form style */
+        .form-input-custom { background: #f4f7f9; border: none; border-radius: 12px; padding: 12px; width: 100%; margin-top: 8px; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='request')}"></div>
+
+<main class="main-content">
+    <header class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h3 class="font-weight-bold mb-1">Besoins matériel</h3>
+            <p class="text-muted small mb-0">Consultez l'historique et soumettez vos nouvelles demandes</p>
+        </div>
+        <button class="btn-new-request shadow-sm" data-toggle="modal" data-target="#requestModal">
+            <i class="fas fa-plus mr-2"></i> Nouvelle demande
+        </button>
+    </header>
+
+    <!-- TABLEAU DE L'HISTORIQUE (Image 1) -->
+    <div class="history-card shadow-sm">
+        <table class="table mb-0">
+            <thead>
+            <tr>
+                <th>Matériel</th>
+                <th>Justification</th>
+                <th>Date</th>
+                <th>Statut</th>
+                <th>Réponse</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="req : ${myRequests}">
+                <td><strong th:text="${req.itemName}">Ordinateur portable</strong></td>
+                <td class="text-muted" th:text="${req.description}">Analyse de données</td>
+                <td class="font-weight-bold text-muted" th:text="${#temporals.format(req.requestDate, 'dd MMM yyyy')}">Jan 2025</td>
+                <td>
+                    <span th:if="${req.status == 'APPROVED'}" class="badge-status status-received">Reçu</span>
+                    <span th:if="${req.status == 'PENDING'}" class="badge-status status-pending">En attente</span>
+                </td>
+                <td>
+                        <span th:if="${req.status == 'APPROVED'}" class="response-text">
+                            <i class="fas fa-check-circle mr-1"></i> Distribué
+                        </span>
+                    <span th:if="${req.status == 'PENDING'}" class="response-pending">En évaluation</span>
+                </td>
+            </tr>
+            <tr th:if="${myRequests.empty}">
+                <td colspan="5" class="text-center py-5 text-muted">Vous n'avez fait aucune demande pour le moment.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<!-- MODALE DU FORMULAIRE (Image 3) -->
+<div class="modal fade" id="requestModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg" style="border-radius:24px; padding:20px;">
+            <div class="modal-header border-0">
+                <h5 class="font-weight-bold text-dark">Formulaire de Demande</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form th:action="@{/member/request-material/save}" th:object="${materialRequest}" method="post">
+                <div class="modal-body">
+                    <p class="small text-muted mb-4">Remplissez ce formulaire pour demander un nouvel article ou louer du matériel.</p>
+
+                    <label class="small font-weight-bold text-muted">DE QUEL ARTICLE AVEZ-VOUS BESOIN ?</label>
+                    <select th:field="*{itemName}" class="form-input-custom" required>
+                        <option value="" disabled selected>Choisir un article...</option>
+                        <option th:each="name : ${equipmentNames}" th:value="${name}" th:text="${name}"></option>
+                        <option value="Autre">Autre (préciser dans la justification)</option>
+                    </select>
+
+                    <label class="small font-weight-bold text-muted mt-4">TYPE DE DEMANDE</label>
+                    <select th:field="*{requestType}" class="form-input-custom">
+                        <option value="PURCHASE">Nouvel achat (Budget)</option>
+                        <option value="LOAN">Emprunt temporaire</option>
+                    </select>
+
+                    <label class="small font-weight-bold text-muted mt-4">JUSTIFICATION</label>
+                    <textarea th:field="*{description}" rows="4" class="form-input-custom" placeholder="Expliquez pourquoi vous avez besoin de ce matériel..."></textarea>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 font-weight-bold shadow-sm">Soumettre au Directeur</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

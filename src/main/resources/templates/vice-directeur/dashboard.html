@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Vice-Directeur | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f8f9fa; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #333; }
+        .main-content { margin-left: 280px; padding: 30px; }
+/* Styles des icônes du Header (Recherche, Message, Bell) */
+        .header-icon-btn {
+            width: 42px; height: 42px;
+            background: white; border: 1px solid #eef0f2;
+            border-radius: 12px; position: relative;
+            color: #666; display: flex; align-items: center;
+            justify-content: center; cursor: pointer; transition: 0.2s;
+        }
+        .header-icon-btn:hover { background: #f8f9fa; color: var(--primary); transform: translateY(-2px); }
+        .icon-badge {
+            position: absolute; top: -5px; right: -5px;
+            background: var(--primary); color: white;
+            font-size: 0.6rem; padding: 2px 6px;
+            border-radius: 50%; font-weight: 800; border: 2px solid white;
+        }
+        /* Banner Card */
+        .hero-banner { background: #ebf3ff; border: 1px solid #cde2f3; border-radius: 16px; padding: 25px; display: flex; align-items: center; margin-bottom: 25px; }
+        .hero-icon { width: 50px; height: 50px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem; margin-right: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        /* KPI Cards */
+        .kpi-card { background: white; border-radius: 12px; border: 1px solid #eef0f2; padding: 15px; height: 100%; transition: 0.2s; }
+        .kpi-value { font-size: 1.6rem; font-weight: 800; display: block; margin-top: 5px; }
+        .kpi-label { font-size: 0.7rem; font-weight: 700; color: #888; text-transform: uppercase; }
+
+        /* Info Box */
+        .info-box { background: white; border: 1px solid #eef0f2; border-radius: 12px; padding: 20px; font-size: 0.85rem; color: #4b4f56; line-height: 1.6; }
+
+        /* Quick Links */
+        .link-card { background: white; border-radius: 12px; border: 1px solid #eef0f2; padding: 15px; margin-bottom: 10px; display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
+        .link-card:hover { background: #f8f9fa; border-color: var(--primary); }
+        /* Styles pastilles notifications */
+        .badge-circle {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; flex-shrink: 0;
+        }
+        .notif-item { transition: background-color 0.2s; cursor: pointer; }
+        .notif-item:hover { background-color: #f8fafc !important; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='dashboard')}"></div>
+
+<!-- ... (Header et Navbar identiques) ... -->
+
+<main class="main-content">
+    <!-- Header -->
+    <!--<header class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="font-weight-bold mb-0">Vue d'ensemble</h4>
+            <p class="text-muted small mb-0" th:text="${#temporals.format(#temporals.createNow(), 'd MMMM yyyy') + ' - Vice-Directeur'}"></p>
+        </div>
+        <button class="btn btn-white shadow-sm rounded-pill px-4 border bg-white">
+            <i class="fas fa-bell mr-2"></i> Alertes <span class="badge badge-danger">3</span>
+        </button>
+    </header>-->
+    <!-- HEADER UNIFIÉ (Admin, Directeur, Membres) -->
+    <header class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="font-weight-bold mb-0">Tableau de bord</h4>
+            <p class="text-muted small mb-0" th:text="${#temporals.format(#temporals.createNow(), 'd MMMM yyyy') + ' - ' + user.role + ' - ' + (user.team != null ? user.team.name : 'Laboratoire LIAS')}"></p>
+        </div>
+
+        <div class="d-flex align-items-center">
+            <!-- RECHERCHE GLOBALE -->
+            <!--<button class="header-icon-btn mr-3" title="Recherche globale">
+                <i class="fas fa-search"></i>
+            </button>-->
+            <form th:action="@{/search}" method="get" class="d-inline-block mr-3">
+                <div style="position: relative; display: flex; align-items: center;">
+                    <i class="fas fa-search" style="position: absolute; left: 14px; color: #9ca3af; font-size: 0.85rem; pointer-events: none;"></i>
+                    <input type="text" name="query" class="form-control" placeholder="Rechercher..."
+                           style="background-color: white; border: 1px solid #eef0f2; border-radius: 12px; padding-left: 35px; font-size: 0.85rem; width: 180px; height: 42px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);" required>
+                </div>
+            </form>
+            <!-- MESSAGERIE -->
+            <!--<button class="header-icon-btn mr-3">
+                <i class="fas fa-comment-alt"></i>
+                <span class="icon-badge">7</span>
+            </button>-->
+            <a th:href="@{/member/discussions-generales}" class="header-icon-btn mr-3 text-decoration-none" title="Discussions">
+                <i class="fas fa-comment-dots"></i>
+                <span class="icon-badge">7</span>
+            </a>
+            <!-- NOTIFICATIONS -->
+            <!--<button class="header-icon-btn">
+                <i class="fas fa-bell"></i>
+                <span class="icon-badge bg-danger">3</span>
+            </button>-->
+            <!-- NOTIFICATIONS DÉROULANTES DYNAMIQUES -->
+            <div class="dropdown d-inline-block">
+                <button class="header-icon-btn position-relative" type="button" id="notifDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-bell"></i>
+                    <!-- Badge rouge avec le vrai nombre non lu -->
+                    <span th:if="${unreadNotifsCount != null and unreadNotifsCount > 0}" class="icon-badge bg-danger" th:text="${unreadNotifsCount}">0</span>
+                </button>
+
+                <!-- FENÊTRE DU MENU DÉROULANT (STYLE RÉSEAUX SOCIAUX) -->
+                <div class="dropdown-menu dropdown-menu-right shadow-lg border-0 p-0" aria-labelledby="notifDropdown" style="width: 360px; border-radius: 18px; overflow: hidden; margin-top: 10px;">
+                    <div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="font-weight-bold mb-0 text-dark">Notifications</h6>
+                        <small class="badge badge-light text-primary font-weight-bold" th:text="${(unreadNotifsCount != null ? unreadNotifsCount : 0) + ' nouvelles'}">0 nouvelles</small>
+                    </div>
+
+                    <!-- Liste scrollable des alertes -->
+                    <div style="max-height: 380px; overflow-y: auto;">
+                        <div th:each="n : ${notifications}" class="p-3 border-bottom d-flex align-items-start notif-item"
+                             th:style="${!n.read} ? 'background-color: #f0f7ff;' : 'background-color: white;'">
+
+                            <!-- Pastille icône selon le type -->
+                            <div class="mr-3 mt-1">
+                                <span th:if="${n.type == 'EVENT'}" class="badge-circle bg-info text-white"><i class="far fa-calendar-check"></i></span>
+                                <span th:if="${n.type == 'VALIDATION'}" class="badge-circle bg-success text-white"><i class="fas fa-check"></i></span>
+                                <span th:if="${n.type == 'DOCUMENT'}" class="badge-circle bg-warning text-white"><i class="far fa-file-alt"></i></span>
+                            </div>
+
+                            <div class="flex-grow-1">
+                                <p class="mb-1 small font-weight-bold text-dark" th:text="${n.title}">Titre</p>
+                                <p class="mb-1 text-muted extra-small" style="font-size: 0.8rem; line-height: 1.3;" th:text="${n.message}">Message...</p>
+                                <small class="text-muted" style="font-size: 0.7rem;" th:text="${#temporals.format(n.dateCreation, 'dd MMM à HH:mm')}">Date</small>
+                            </div>
+                        </div>
+
+                        <!-- État vide -->
+                        <div th:if="${notifications == null or notifications.empty}" class="p-4 text-center text-muted small">
+                            <i class="far fa-bell-slash fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">Aucune notification pour le moment.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- BANNIÈRE HERO (Image 1) -->
+    <div class="card border-0 shadow-sm mb-4" style="background: #eef6ff; border-radius: 20px; border: 1px solid #d0e3ff !important;">
+        <div class="card-body d-flex align-items-center p-4">
+            <div class="bg-white rounded-circle mr-4 d-flex align-items-center justify-content-center shadow-sm" style="width:60px; height:60px; color:#0a66c2;">
+                <i class="fas fa-crown fa-lg"></i>
+            </div>
+            <div class="flex-grow-1">
+                <h5 class="font-weight-bold mb-1" th:text="${'Pr. ' + user.firstName + ' ' + user.lastName}">Pr. Hamid Zerrouk</h5>
+                <p class="text-primary small mb-0 font-weight-bold">Vice-Directeur — Assiste le directeur — supervision et consultation étendues</p>
+            </div>
+            <span class="badge badge-primary px-3 py-2" style="border-radius: 8px;">Mandat actif</span>
+        </div>
+    </div>
+
+    <!-- GRILLE KPI (Image 1) -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3"><div class="kpi-card shadow-sm"><span class="kpi-label">Membres actifs</span><span class="kpi-value text-primary" th:text="${activeMembers}">38</span><small class="text-muted">Vue globale</small></div></div>
+        <div class="col-md-4 mb-3"><div class="kpi-card shadow-sm"><span class="kpi-label">Publications ce mois</span><span class="kpi-value text-success" th:text="${pubsMonth}">6</span><small class="text-muted">Toutes équipes</small></div></div>
+        <div class="col-md-4 mb-3"><div class="kpi-card shadow-sm"><span class="kpi-label">Événements à venir</span><span class="kpi-value text-warning" th:text="${eventsCount}">3</span><small class="text-muted">30 prochains jours</small></div></div>
+        <div class="col-md-4 mb-3"><div class="kpi-card shadow-sm"><span class="kpi-label">Rapport annuel</span><span class="kpi-value text-info">68%</span><small class="text-muted">Avancement</small></div></div>
+        <div class="col-md-4 mb-3"><div class="kpi-card shadow-sm"><span class="kpi-label">Adhésions en cours</span><span class="kpi-value text-danger" th:text="${pendingAdhesions}">4</span><small class="text-muted">En attente directeur</small></div></div>
+        <div class="col-md-4 mb-3"><div class="kpi-card shadow-sm"><span class="kpi-label">Besoins non traités</span><span class="kpi-value text-dark" th:text="${pendingMaterial}">2</span><small class="text-muted">Demandes matériel</small></div></div>
+    </div>
+
+    <!-- TEXTE EXPLICATIF (Image 1) -->
+    <div class="alert shadow-sm mb-5" style="background: white; border-radius: 15px; border-left: 5px solid #0a66c2; font-size: 0.85rem; color: #4b4f56;">
+        <i class="fas fa-info-circle text-primary mr-2"></i>
+        En tant que <strong>Vice-Directeur</strong>, vous avez un accès en <strong>lecture étendue</strong> sur tous les modules. Vous pouvez co-organiser les événements selon délégation du directeur et <strong>contribuer à la rédaction des PV</strong>. Les décisions finales (adhésions, mandats, conventions) restent du ressort du directeur.
+    </div>
+
+    <!-- RACCOURCIS & ACTIVITÉ (Bas de page) -->
+    <div class="row">
+        <div class="col-lg-6">
+            <h6 class="font-weight-bold mb-3"><i class="fas fa-bolt text-primary mr-2"></i> Raccourcis rapides</h6>
+            <div class="bg-white p-3 rounded-lg shadow-sm border mb-2" style="cursor:pointer" onclick="location.href='/members'"><i class="fas fa-users mr-3 text-muted"></i> Consulter tous les membres</div>
+            <div class="bg-white p-3 rounded-lg shadow-sm border mb-2" style="cursor:pointer" onclick="location.href='/events'"><i class="far fa-calendar mr-3 text-muted"></i> Voir les événements</div>
+            <div class="bg-white p-3 rounded-lg shadow-sm border mb-2" style="cursor:pointer" onclick="location.href='/publications'"><i class="fas fa-book mr-3 text-muted"></i> Consulter les publications</div>
+        </div>
+        <div class="col-lg-6">
+            <h6 class="font-weight-bold mb-3">Activité récente du labo</h6>
+            <div class="bg-white p-4 rounded-lg shadow-sm border h-100">
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-3 border-bottom pb-2">● <strong>Dr. Y. Brahim</strong> — publication Nature Comp. <br><small class="text-muted">Aujourd'hui, 10:30</small></li>
+                    <li class="mb-3 border-bottom pb-2">● <strong>Convention Hassan II</strong> signée <br><small class="text-muted">Hier, 09:00</small></li>
+                    <li>● <strong>4 nouvelles adhésions</strong> soumises <br><small class="text-muted">22 juin, 14:00</small></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

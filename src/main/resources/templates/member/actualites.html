@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Actualités | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root { --primary-blue: #004a99; --text-muted: #6b7280; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .main-content-area { margin-left: 280px; padding: 40px; }
+
+        .page-header { margin-bottom: 1.5rem; }
+        .page-header h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; color: #1a1a2e; }
+        .page-header .subtitle { font-size: 14px; color: #6b7280; margin: 0; }
+
+        .header-action { margin-bottom: 1.5rem; }
+        .btn-primary { background: #2563eb; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-primary:hover { background: #1d4ed8; color: white; text-decoration: none; }
+
+        .actu-list { display: flex; flex-direction: column; gap: 12px; max-width: 720px; }
+        .actu-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.25rem 1.5rem; }
+        .actu-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+
+        .badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; }
+        .badge-blue { background: #dbeafe; color: #1d4ed8; }
+        .badge-green { background: #d1fae5; color: #047857; }
+        .badge-orange { background: #fed7aa; color: #c2410c; }
+
+        .actu-date { font-size: 12px; color: #9ca3af; }
+        .actu-title { font-size: 16px; font-weight: 600; margin: 0 0 6px; color: #111827; }
+        .actu-excerpt { font-size: 14px; color: #4b5563; line-height: 1.5; margin: 0 0 10px; }
+        .actu-author { font-size: 12px; color: #9ca3af; margin: 0; display: flex; align-items: center; gap: 4px; }
+        .empty-state { text-align: center; padding: 3rem 1rem; color: #9ca3af; }
+
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 1050; }
+        .modal-content { background: white; border-radius: 12px; padding: 1.5rem; width: 400px; max-width: 90%; }
+        .modal-content label { font-size: 12px; font-weight: 600; color: #374151; display: block; margin: 12px 0 4px; }
+        .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='actualites')}"></div>
+
+<div class="main-content-area">
+    <div class="page-header">
+        <h1>Actualités du laboratoire</h1>
+        <p class="subtitle">Annonces, publications et événements du LIAS</p>
+    </div>
+
+    <div th:if="${canPublish}" class="header-action">
+        <button class="btn-primary" onclick="document.getElementById('modal-publier').style.display='flex'">
+            <i class="fas fa-plus"></i> Publier une actualité
+        </button>
+    </div>
+
+    <div class="actu-list">
+        <div th:if="${actualites.isEmpty()}" class="empty-state">
+            <i class="fas fa-news" style="font-size: 32px;"></i>
+            <p>Aucune actualité publiée pour le moment.</p>
+        </div>
+
+        <div th:each="actu : ${actualites}" class="actu-card">
+            <div class="actu-card-header">
+                <span class="badge"
+                      th:classappend="${actu.type == 'Publication'} ? 'badge-green' : (${actu.type == 'Evenement'} ? 'badge-orange' : 'badge-blue')"
+                      th:text="${actu.type}">Type</span>
+                <span class="actu-date" th:text="${#temporals.format(actu.dateCreation, 'dd MMM yyyy')}">Date</span>
+            </div>
+            <h3 class="actu-title" th:text="${actu.titre}">Titre</h3>
+            <p class="actu-excerpt" th:text="${#strings.abbreviate(actu.contenu, 200)}">Contenu</p>
+
+            <p th:if="${actu.documentPath != null}">
+                <a th:href="@{'/member/actualites/download/' + ${actu.id}}" class="text-primary small font-weight-bold">
+                    <i class="fas fa-paperclip mr-1"></i> 📎 Télécharger le document
+                </a>
+            </p>
+
+            <p class="actu-author" th:if="${actu.auteur != null}">
+                <i class="fas fa-user-circle"></i>
+                Publié par <span th:text="${actu.auteur.firstName + ' ' + actu.auteur.lastName}">Auteur</span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de publication -->
+<div id="modal-publier" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h3>Publier une actualité</h3>
+        <form th:action="@{/directeur/actualites/save}" method="post" enctype="multipart/form-data">
+            <label>Titre</label>
+            <input type="text" name="titre" required />
+            <label>Type</label>
+            <select name="type">
+                <option value="Annonce">Annonce</option>
+                <option value="Publication">Publication</option>
+                <option value="Evenement">Événement</option>
+            </select>
+            <label>Contenu</label>
+            <textarea name="contenu" rows="4" required></textarea>
+
+            <label>Document à joindre (optionnel)</label>
+            <input type="file" name="documentFile" accept=".pdf" />
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-publier').style.display='none'">Annuler</button>
+                <button type="submit" class="btn-primary">Publier</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

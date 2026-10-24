@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion Actualités | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f8f9fa; }
+        /*body { font-family: 'Inter', sans-serif; background-color: #fdfaf5; color: #1c1e21; }*/
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #1c1e21; }
+
+
+        /* Alignement avec la sidebar */
+        .main-content { margin-left: 280px; padding: 40px; }
+
+        /* Style des Cartes (Design Image) */
+        .news-card {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #eef0f2;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+
+        .type-badge { padding: 4px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; margin-bottom: 15px; display: inline-block; }
+        .badge-pub { background: #e8f5e9; color: #1a8a3a; }
+        .badge-event { background: #e3f2fd; color: #0a66c2; }
+        .badge-thèse { background: #f3f0ff; color: #7950f2; }
+
+        /* Widgets de droite */
+        .widget-card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #eef0f2; margin-bottom: 20px; }
+        .widget-title { font-size: 0.8rem; font-weight: 800; color: #4a5568; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Boutons Actions */
+        .btn-add-news { border: 1.5px solid #1c1e21; background: white; border-radius: 12px; font-weight: 700; padding: 10px 25px; margin-bottom: 30px; transition: 0.2s; }
+        .btn-add-news:hover { background: #1c1e21; color: white; }
+
+        .btn-modify { background: white; border: 1.5px solid #ddd; border-radius: 12px; font-weight: 700; padding: 10px 30px; }
+        .btn-delete { background: white; border: 1.5px solid #ffcccc; color: #e74c3c; border-radius: 12px; width: 50px; display: flex; align-items: center; justify-content: center; }
+
+        .avatar-circle-sm { width: 35px; height: 35px; border-radius: 50%; background: #e7f3ff; color: #0a66c2; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem; }
+        /* Style pour les labels du formulaire */
+.modal-content label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    display: block;
+    margin: 15px 0 5px;
+}
+
+/* Style pour l'input file */
+input[type="file"] {
+    background: #f8f9fa;
+    padding: 10px;
+    border: 1px dashed #d1d5db;
+    border-radius: 8px;
+    width: 100%;
+    cursor: pointer;
+}
+
+input[type="file"]:hover {
+    border-color: var(--primary-blue);
+    background: #eff6ff;
+}
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='actualites')}"></div>
+
+<main class="main-content">
+    <header class="mb-4">
+        <h3 class="font-weight-bold mb-1">Actualités du laboratoire</h3>
+        <p class="text-muted small">Journal de bord vivant - Publications, événements, annonces</p>
+        <button class="btn btn-add-news shadow-sm mt-2" data-toggle="modal" data-target="#addNewsModal">
+            <i class="fas fa-plus mr-2"></i> Publier une actualité
+        </button>
+    </header>
+
+    <div class="row">
+        <!-- COLONNE GAUCHE : FLUX D'ACTUALITÉS -->
+        <div class="col-lg-7">
+            <!-- La boucle dynamique -->
+            <div th:each="actu : ${actualites}" class="news-card shadow-sm">
+                <div class="d-flex justify-content-between">
+                    <span th:class="'type-badge ' + (${actu.type == 'Publication' ? 'badge-pub' : (actu.type == 'Soutenance' ? 'badge-thèse' : 'badge-event')})"
+                          th:text="${actu.type}">Type</span>
+                    <small class="text-muted font-weight-bold" th:text="${#temporals.format(actu.dateCreation, 'dd MMMM, HH:mm')}">Date</small>
+                </div>
+
+                <h5 class="font-weight-bold mt-1 mb-2" th:text="${actu.titre}">Titre de l'actualité</h5>
+                <p class="text-muted small mb-4" style="line-height: 1.6;" th:text="${actu.contenu}">Description...</p>
+
+                <div class="d-flex align-items-center pt-3 border-top">
+                    <div class="avatar-circle-sm mr-3" th:text="${actu.auteur.firstName.substring(0,1) + actu.auteur.lastName.substring(0,1)}">AB</div>
+                    <div class="flex-grow-1">
+                        <p class="mb-0 small font-weight-bold" th:text="${'Pr. ' + actu.auteur.firstName + ' ' + actu.auteur.lastName}">Auteur</p>
+                    </div>
+
+                    <div class="d-flex">
+                        <button class="btn-modify mr-2">Modifier</button>
+                        <form th:action="@{/directeur/actualites/delete/{id}(id=${actu.id})}" method="post">
+                            <button type="submit" class="btn-delete" onclick="return confirm('Supprimer cette actualité ?')">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message si vide -->
+            <div th:if="${actualites.empty}" class="text-center py-5 bg-white rounded-lg border border-dashed">
+                <p class="text-muted mb-0">Aucune actualité publiée pour le moment.</p>
+            </div>
+        </div>
+
+        <!-- COLONNE DROITE : WIDGETS -->
+        <div class="col-lg-5">
+            <div class="widget-card shadow-sm">
+                <div class="widget-title"><i class="fas fa-calendar-day mr-2 text-primary"></i> Prochains événements</div>
+                <div class="small text-dark font-weight-bold mb-1">Séminaire IA & Big Data</div>
+                <p class="extra-small text-muted mb-3">Salle A - <span class="text-danger">Sans organisateur</span></p>
+
+                <div class="small text-dark font-weight-bold mb-1">Soutenance Sara...</div>
+                <p class="extra-small text-muted">Amphi A - 10h00</p>
+            </div>
+
+            <div class="widget-card shadow-sm">
+                <div class="widget-title"><i class="fas fa-chart-bar mr-2 text-primary"></i> Statistiques du feed</div>
+                <div class="d-flex justify-content-between small mb-3">
+                    <span class="text-muted">Publications annoncées</span>
+                    <strong th:text="${countPubs}">0</strong>
+                </div>
+                <div class="d-flex justify-content-between small">
+                    <span class="text-muted">Total actualités 2026</span>
+                    <strong th:text="${totalActu}">0</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- MODALE D'AJOUT -->
+<div class="modal fade" id="addNewsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <!--<form th:action="@{/directeur/actualites/save}" method="post">-->
+            <form th:action="@{/directeur/actualites/save}" method="post" enctype="multipart/form-data">
+                <div class="modal-header border-0"><h5 class="font-weight-bold">Nouvelle actualité</h5></div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="small font-weight-bold">Type</label>
+                        <select name="type" class="form-control border-0 bg-light" style="border-radius:10px;">
+                            <option>Publication</option><option>Événement</option><option>Soutenance</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">Titre</label>
+                        <input type="text" name="titre" class="form-control border-0 bg-light" required style="border-radius:10px;">
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">Contenu</label>
+                        <textarea name="contenu" rows="4" class="form-control border-0 bg-light" style="border-radius:10px;"></textarea>
+                    </div>
+                    <!--<label>Document à joindre (PDF optionnel)</label>
+                    <input type="file" name="documentFile" accept=".pdf" class="form-control" />-->
+                    <label class="small font-weight-bold">DOCUMENT À JOINDRE (PDF)</label>
+                    <div class="custom-file mb-3">
+                        <input type="file" name="documentFile" accept=".pdf" class="form-control-file" id="customFile">
+                    </div>
+
+                    <!-- Bouton de soumission -->
+                    <!--<button type="submit" class="btn btn-primary">Publier</button>-->
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="submit" class="btn btn-primary btn-block rounded-pill py-2 font-weight-bold">Publier</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

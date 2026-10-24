@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Sauvegardes | LIAS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --primary: #0a66c2; --bg: #f8f9fa; --text: #1c1e21; }
+    body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); }
+    .main-content { margin-left: 280px; padding: 40px; }
+
+    .stat-card { background: white; border-radius: 20px; border: 1px solid #eef0f2; padding: 25px; height: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+
+    /* Liste Sauvegardes */
+    .backup-item { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f8fafc; }
+    .backup-item:last-child { border: none; }
+    .backup-info b { display: block; font-size: 0.95rem; color: #333; }
+    .backup-info span { font-size: 0.8rem; color: #888; font-weight: 600; }
+
+    /* Badges Status */
+    .badge-status { padding: 4px 10px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+    .status-ok { background: #e8f5e9; color: #1a8a3a; }
+    .status-partiel { background: #fff3e0; color: #b8860b; }
+
+    /* Boutons */
+    .btn-restore { background: white; border: 1px solid #ddd; border-radius: 10px; padding: 6px 15px; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
+    .btn-restore:hover { background: var(--primary); color: white; border-color: var(--primary); }
+    .btn-run { background: #f8fafc; border: 1px solid #e2e8f0; color: #333; border-radius: 12px; padding: 10px 25px; font-weight: 700; }
+    .btn-run:hover { background: #eef2f7; }
+
+    /* Toggle Switch */
+    .switch { position: relative; display: inline-block; width: 45px; height: 22px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(22px); }
+
+    .plan-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .plan-label b { display: block; font-size: 0.9rem; }
+    .plan-label small { color: #888; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='backups')}"></div>
+
+<main class="main-content">
+  <header class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+      <h3 class="font-weight-bold mb-1">Sauvegardes</h3>
+      <p class="text-muted small">Historique, planification et restauration du système</p>
+    </div>
+    <form th:action="@{/admin/backups/run}" method="post">
+      <button type="submit" class="btn btn-run shadow-sm">
+        <i class="fas fa-cloud-upload-alt mr-2 text-primary"></i> Lancer maintenant
+      </button>
+    </form>
+  </header>
+
+  <div th:if="${message}" class="alert alert-success" style="border-radius:12px;" th:text="${message}"></div>
+
+  <div class="row">
+    <!-- 1. COLONNE GAUCHE : HISTORIQUE -->
+    <div class="col-lg-7">
+      <div class="stat-card shadow-sm">
+        <h6 class="font-weight-bold mb-4"><i class="fas fa-history mr-2 text-primary"></i> Historique des sauvegardes</h6>
+
+        <div th:each="b : ${backups}" class="backup-item">
+          <div class="backup-info">
+            <b th:text="${b.fileName}">backup_2026-06-18.zip</b>
+            <span th:text="${#temporals.format(b.dateCreation, 'dd MMMM, HH:mm') + ' — ' + b.size}">18 juin, 02:00 — 1.2 Go</span>
+          </div>
+          <div class="d-flex align-items-center">
+            <span th:class="'badge-status mr-3 ' + (${b.status == 'OK' ? 'status-ok' : 'status-partiel'})" th:text="${b.status}">OK</span>
+            <button class="btn-restore">Restaurer</button>
+          </div>
+        </div>
+
+        <div th:if="${backups.empty}" class="text-center py-5">
+          <p class="text-muted">Aucune sauvegarde enregistrée.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. COLONNE DROITE : PLANIFICATION -->
+    <div class="col-lg-5">
+      <div class="stat-card shadow-sm">
+        <h6 class="font-weight-bold mb-4"><i class="fas fa-cog mr-2 text-primary"></i> Planification</h6>
+
+        <!-- Toggle Auto -->
+        <div class="plan-item">
+          <div class="plan-label">
+            <b>Sauvegarde automatique</b>
+            <small>Quotidienne à 02:00</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" th:checked="${autoBackup}">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Retention Input -->
+        <div class="plan-item">
+          <div class="plan-label">
+            <b>Rétention des backups</b>
+            <small>Nombre de jours conservés</small>
+          </div>
+          <input type="number" class="form-control text-center font-weight-bold" style="width: 80px; border-radius:10px;" th:value="${retentionDays}">
+        </div>
+
+        <hr class="my-4" style="opacity: 0.05;">
+
+        <!-- Purge Button -->
+        <div class="plan-item">
+          <div class="plan-label">
+            <b>Purger les anciens logs</b>
+            <small>Supprimer logs > 90 jours</small>
+          </div>
+          <button class="btn btn-outline-danger font-weight-bold px-4" style="border-radius:10px; font-size:0.85rem;">Purger</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

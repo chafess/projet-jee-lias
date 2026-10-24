@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Supervision Système | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f3f6f8; --text: #1c1e21; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); }
+        .main-content { margin-left: 280px; padding: 40px; transition: 0.3s; }
+
+        /* Styles des icônes du Header */
+        .header-icon-btn {
+            width: 42px; height: 42px;
+            background: white; border: 1px solid #eef0f2;
+            border-radius: 12px; position: relative;
+            color: #666; display: flex; align-items: center;
+            justify-content: center; cursor: pointer; transition: 0.2s;
+        }
+        .header-icon-btn:hover { background: #f8f9fa; color: var(--primary); transform: translateY(-2px); }
+        .icon-badge {
+            position: absolute; top: -5px; right: -5px;
+            background: var(--primary); color: white;
+            font-size: 0.6rem; padding: 2px 6px;
+            border-radius: 50%; font-weight: 800; border: 2px solid white;
+        }
+
+        /* KPI Grid */
+        .kpi-card { background: white; border-radius: 16px; padding: 20px; border: none; height: 100%; transition: 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .kpi-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #f0f7ff; color: var(--primary); }
+        .kpi-value { font-size: 1.8rem; font-weight: 800; margin: 10px 0 2px; }
+        .kpi-label { font-size: 0.75rem; font-weight: 700; color: #888; text-transform: uppercase; }
+
+        /* Quick Actions */
+        .action-btn { background: white; border: 1px solid #e0e0e0; border-radius: 16px; padding: 20px; font-weight: 700; color: #333; transition: 0.2s; display: flex; align-items: center; justify-content: center; flex-direction: column; width: 100%; text-decoration: none !important; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .action-btn:hover { background: #f8f9fa; border-color: var(--primary); color: var(--primary); }
+        .action-btn i { font-size: 1.5rem; margin-bottom: 10px; }
+
+        /* Director & Logs */
+        .card-custom { background: white; border-radius: 20px; padding: 25px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .director-card { background: linear-gradient(135deg, #0a66c2, #004182); color: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .progress-custom { background: rgba(255,255,255,0.2); height: 8px; border-radius: 10px; margin-top: 15px; }
+        .progress-bar-white { background: white; border-radius: 10px; }
+
+        /* Badges & Dots */
+        .badge-status { font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; }
+        .bg-active { background: #e8f5e9; color: #1a8a3a; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 10px; }
+        .badge-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
+        .notif-item { transition: background-color 0.2s; cursor: pointer; }
+        .notif-item:hover { background-color: #f8fafc !important; }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar Fragment -->
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='admin-dash')}"></div>
+
+<main class="main-content">
+
+    <!-- HEADER -->
+    <header class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="font-weight-bold mb-0">Tableau de bord</h4>
+            <p class="text-muted small mb-0" th:text="${#temporals.format(#temporals.createNow(), 'd MMMM yyyy') + ' - ' + user.role + ' - ' + (user.team != null ? user.team.name : 'Laboratoire LIAS')}"></p>
+        </div>
+
+        <div class="d-flex align-items-center">
+            <form th:action="@{/search}" method="get" class="d-inline-block mr-3">
+                <div class="input-group" style="width: 200px;">
+                    <input type="text" name="query" class="form-control form-control-sm border-0 bg-white shadow-sm" style="border-radius: 12px 0 0 12px; height: 42px;" placeholder="Recherche labo..." required>
+                    <div class="input-group-append">
+                        <button class="btn btn-white btn-sm shadow-sm border-0 bg-white" style="border-radius: 0 12px 12px 0; height: 42px;" type="submit">
+                            <i class="fas fa-search text-muted"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <a th:href="@{/member/discussions-generales}" class="header-icon-btn mr-3 text-decoration-none" title="Discussions">
+                <i class="fas fa-comment-dots"></i>
+                <span class="icon-badge">7</span>
+            </a>
+
+            <!-- NOTIFICATIONS DÉROULANTES -->
+            <div class="dropdown d-inline-block">
+                <button class="header-icon-btn position-relative" type="button" id="notifDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-bell"></i>
+                    <span th:if="${unreadNotifsCount != null and unreadNotifsCount > 0}" class="icon-badge bg-danger" th:text="${unreadNotifsCount}">0</span>
+                </button>
+
+                <div class="dropdown-menu dropdown-menu-right shadow-lg border-0 p-0" aria-labelledby="notifDropdown" style="width: 360px; border-radius: 18px; overflow: hidden; margin-top: 10px;">
+                    <div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="font-weight-bold mb-0 text-dark">Notifications</h6>
+                        <small class="badge badge-light text-primary font-weight-bold" th:text="${(unreadNotifsCount != null ? unreadNotifsCount : 0) + ' nouvelles'}">0 nouvelles</small>
+                    </div>
+
+                    <div style="max-height: 380px; overflow-y: auto;">
+                        <div th:each="n : ${notifications}" class="p-3 border-bottom d-flex align-items-start notif-item"
+                             th:style="${!n.read} ? 'background-color: #f0f7ff;' : 'background-color: white;'">
+                            <div class="mr-3 mt-1">
+                                <span th:if="${n.type == 'EVENT'}" class="badge-circle bg-info text-white"><i class="far fa-calendar-check"></i></span>
+                                <span th:if="${n.type == 'VALIDATION'}" class="badge-circle bg-success text-white"><i class="fas fa-check"></i></span>
+                                <span th:if="${n.type == 'DOCUMENT'}" class="badge-circle bg-warning text-white"><i class="far fa-file-alt"></i></span>
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="mb-1 small font-weight-bold text-dark" th:text="${n.title}">Titre</p>
+                                <p class="mb-1 text-muted extra-small" style="font-size: 0.8rem; line-height: 1.3;" th:text="${n.message}">Message...</p>
+                                <small class="text-muted" style="font-size: 0.7rem;" th:text="${#temporals.format(n.dateCreation, 'dd MMM à HH:mm')}">Date</small>
+                            </div>
+                        </div>
+
+                        <div th:if="${notifications == null or notifications.empty}" class="p-4 text-center text-muted small">
+                            <i class="far fa-bell-slash fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">Aucune notification pour le moment.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- GRILLE KPI -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-4">
+            <div class="kpi-card shadow-sm">
+                <div class="d-flex justify-content-between">
+                    <div class="kpi-icon"><i class="fas fa-users"></i></div>
+                    <span class="badge badge-primary px-2" style="font-size: 10px; border-radius: 5px;" th:text="${'+' + countNew + ' nouveaux'}">+2 nouveaux</span>
+                </div>
+                <h3 class="kpi-value" th:text="${totalAccounts}">42</h3>
+                <p class="kpi-label">Comptes actifs</p>
+                <small class="text-muted">Connectés ce mois</small>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="kpi-card shadow-sm">
+                <div class="kpi-icon" style="background:#f3e5f5; color:#7b1fa2;"><i class="fas fa-bolt"></i></div>
+                <h3 class="kpi-value" style="color:#7b1fa2;">18</h3>
+                <p class="kpi-label">Connexions aujourd'hui</p>
+                <small class="text-muted">Sessions actives</small>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="kpi-card shadow-sm">
+                <div class="kpi-icon" style="background:#e8f5e9; color:#2e7d32;"><i class="fas fa-database"></i></div>
+                <h3 class="kpi-value" style="color:#2e7d32;">4.2 Go</h3>
+                <p class="kpi-label">Stockage</p>
+                <small class="text-muted">Sur 50 Go (8.4%)</small>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="kpi-card shadow-sm">
+                <div class="kpi-icon"><i class="fas fa-chart-pie"></i></div>
+                <div class="mt-3">
+                    <span class="badge badge-light border mr-1" th:text="${countPerm + ' perm.'}">24 perm.</span>
+                    <span class="badge badge-light border mr-1" th:text="${countPhd + ' doc.'}">15 doc.</span>
+                    <span class="badge badge-light border" th:text="${countRet + ' ret.'}">3 ret.</span>
+                </div>
+                <p class="kpi-label mt-2">Répartition</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="kpi-card shadow-sm">
+                <div class="kpi-icon" style="background:#e8f5e9; color:#2e7d32;"><i class="fas fa-file-invoice"></i></div>
+                <h3 class="kpi-value" th:text="${totalDocs}">1247</h3>
+                <p class="kpi-label">Documents</p>
+                <small class="text-muted">Publications + rapports</small>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="kpi-card shadow-sm">
+                <div class="kpi-icon" style="background:#e8f5e9; color:#2e7d32;"><i class="fas fa-shield-virus"></i></div>
+                <h3 class="kpi-value" style="color:#2e7d32;">0</h3>
+                <p class="kpi-label">Erreurs système</p>
+                <small class="text-muted">Dernières 24h</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTIONS RAPIDES -->
+    <div class="row mb-5">
+        <div class="col-md-4"><a href="#" class="action-btn shadow-sm"><i class="fas fa-user-plus text-primary"></i> Créer un utilisateur</a></div>
+        <div class="col-md-4"><a th:href="@{/admin/mandats}" class="action-btn shadow-sm"><i class="fas fa-crown text-warning"></i> Configurer un mandat</a></div>
+        <div class="col-md-4"><a th:href="@{/admin/maintenance}" class="action-btn shadow-sm"><i class="fas fa-tools text-secondary"></i> Maintenance</a></div>
+    </div>
+
+    <!-- NOUVELLE LIGNE DE RÉPARTITION HARMONIEUSE (ASSOCIÉS, CHEFS, V-DIR, ANCIENS) -->
+    <div class="row mb-5">
+        <div class="col-md-3 mb-3">
+            <div class="kpi-card shadow-sm text-center py-3">
+                <span class="text-muted small font-weight-bold text-uppercase">Membres Associés</span>
+                <h3 class="font-weight-bold text-primary mb-0 mt-1" th:text="${countAssocie}">0</h3>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="kpi-card shadow-sm text-center py-3">
+                <span class="text-muted small font-weight-bold text-uppercase">Chefs d'équipe</span>
+                <h3 class="font-weight-bold text-warning mb-0 mt-1" th:text="${countChefEquipe}">0</h3>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="kpi-card shadow-sm text-center py-3">
+                <span class="text-muted small font-weight-bold text-uppercase">Vice-Directeurs</span>
+                <h3 class="font-weight-bold text-info mb-0 mt-1" th:text="${countViceDirecteur}">0</h3>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="kpi-card shadow-sm text-center py-3">
+                <span class="text-muted small font-weight-bold text-uppercase">Anciens membres</span>
+                <h3 class="font-weight-bold text-secondary mb-0 mt-1" th:text="${countAncien}">0</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- BAS DE PAGE -->
+    <div class="row">
+        <!-- GAUCHE -->
+        <div class="col-lg-6">
+            <div class="director-card shadow-sm mb-4">
+                <p class="small font-weight-bold mb-2"><i class="fas fa-crown mr-2"></i> Directeur actuel</p>
+                <h4 class="font-weight-bold" th:text="${currentDirector != null ? 'Pr. ' + currentDirector.firstName + ' ' + currentDirector.lastName : 'Aucun mandat actif'}">Pr. Ahmed Benali</h4>
+                <div class="d-flex justify-content-between small mt-4">
+                    <span>Jan 2024</span> <span>Fin : Déc 2026</span>
+                </div>
+                <div class="progress progress-custom shadow-sm">
+                    <div class="progress-bar progress-bar-white" style="width: 65%"></div>
+                </div>
+            </div>
+
+            <div class="card-custom shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="font-weight-bold mb-0">Derniers comptes</h6>
+                    <a th:href="@{/admin/members}" class="small font-weight-bold text-primary">Voir tout →</a>
+                </div>
+                <div th:each="m : ${latestMembers}" class="d-flex align-items-center mb-3">
+                    <div class="avatar-sm bg-light rounded-circle mr-3 p-2 text-center" style="width:40px; height:40px;"
+                         th:text="${(m.firstName != null ? m.firstName.substring(0,1) : 'X') + (m.lastName != null ? m.lastName.substring(0,1) : 'Y')}">SM</div>
+                    <div class="flex-grow-1">
+                        <p class="mb-0 small font-weight-bold" th:text="${m.firstName + ' ' + m.lastName}">Nom</p>
+                        <small class="text-muted" th:text="${m.role}">Rôle</small>
+                    </div>
+                    <span class="badge-status bg-active">Actif</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- DROITE -->
+        <div class="col-lg-6">
+            <div class="card-custom shadow-sm mb-4">
+                <h6 class="font-weight-bold mb-4">Journal récent</h6>
+                <div class="small mb-3 d-flex align-items-start">
+                    <span class="dot bg-primary mt-1"></span>
+                    <div>
+                        <p class="mb-0">Rôle de <strong>K. Ouali</strong> modifié → Chercheur senior</p>
+                        <small class="text-muted">Aujourd'hui, 09:14</small>
+                    </div>
+                </div>
+                <div class="small mb-3 d-flex align-items-start">
+                    <span class="dot bg-success mt-1"></span>
+                    <div>
+                        <p class="mb-0">Compte <strong>S. Moussaoui</strong> créé et activé</p>
+                        <small class="text-muted">Hier, 15:32</small>
+                    </div>
+                </div>
+                <a href="#" class="small font-weight-bold mt-3 text-center d-block text-primary">Voir tout le journal →</a>
+            </div>
+
+            <div class="card-custom shadow-sm">
+                <h6 class="font-weight-bold mb-3">État serveurs</h6>
+                <div class="d-flex justify-content-between py-2 border-bottom small">
+                    <span><i class="fas fa-database mr-2 text-muted"></i> MySQL</span>
+                    <span class="text-success font-weight-bold">● Connecté</span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom small">
+                    <span><i class="fas fa-folder mr-2 text-muted"></i> lias_uploads/</span>
+                    <span class="text-success font-weight-bold">● Accessible</span>
+                </div>
+                <div class="d-flex justify-content-between py-2 small">
+                    <span><i class="fas fa-history mr-2 text-muted"></i> Dernière sauvegarde</span>
+                    <span class="font-weight-bold text-dark">18 juin, 02:00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

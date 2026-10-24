@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Événements | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f0f4f8; --text: #1c1e21; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); }
+
+        /* Sidebar Filters */
+        .filter-card { border-radius: 20px; border: none; background: white; padding: 25px; position: sticky; top: 90px; }
+        .filter-label { font-size: 0.7rem; font-weight: 800; color: #adb5bd; letter-spacing: 1px; text-transform: uppercase; margin: 20px 0 10px; }
+        .filter-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.9rem; color: #4b4f56; cursor: pointer; text-decoration: none !important; }
+        .filter-item:hover { color: var(--primary); }
+        .count { color: #cbd5e0; font-weight: 600; }
+
+        /* Tabs Navigation */
+        .tab-nav { display: flex; gap: 10px; margin-bottom: 25px; }
+        .tab-link { padding: 10px 25px; border-radius: 12px; background: white; border: 1px solid #e2e8f0; color: #4b4f56; font-weight: 700; text-decoration: none !important; transition: 0.3s; }
+        .tab-link.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Search & Sort */
+        .search-container { position: relative; flex-grow: 1; }
+        .search-icon { position: absolute; left: 15px; top: 12px; color: #adb5bd; }
+        .search-input { border-radius: 12px; border: 1px solid #e2e8f0; padding-left: 45px; height: 45px; }
+
+        /* EVENT CARD - DESIGN EXACT */
+        .event-card { background: white; border-radius: 20px; border: none; margin-bottom: 20px; display: flex; overflow: hidden; transition: 0.3s; }
+        .event-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+
+        .date-side { width: 100px; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #f1f3f5; min-height: 160px; }
+        .day { font-size: 2rem; font-weight: 800; color: #333; line-height: 1; }
+        .month { font-size: 0.85rem; font-weight: 700; color: #9199a1; text-transform: uppercase; }
+
+        .event-body { flex-grow: 1; padding: 25px; display: flex; flex-direction: column; }
+        .badge-type { padding: 4px 14px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; margin-bottom: 12px; display: inline-block; width: fit-content; }
+        .type-workshop { background: #fff3e0; color: #e67e22; }
+        .type-seminar { background: #e8f5e9; color: #27ae60; }
+        .type-conference { background: #e3f2fd; color: #0a66c2; }
+
+        .event-title { font-weight: 700; font-size: 1.2rem; color: #1c1e21; margin-bottom: 10px; }
+        .meta-info { font-size: 0.85rem; color: #65676b; margin-bottom: 4px; display: flex; align-items: center; }
+        .meta-info i { width: 20px; color: #9199a1; }
+
+        .card-actions { border-top: 1px solid #f1f3f5; margin-top: auto; padding-top: 15px; display: flex; gap: 10px; }
+        .btn-action { border-radius: 10px; font-weight: 700; font-size: 0.85rem; padding: 8px 20px; transition: 0.2s; }
+        .btn-outline { background: white; border: 1px solid #e2e8f0; color: #4b4f56; }
+        .btn-outline:hover { background: #f8f9fa; }
+        .btn-primary-blue { background: var(--primary); color: white; border: none; }
+        .btn-primary-blue:hover { background: #084d91; }
+
+        /* Summary Box */
+        .summary-box { background: #f8f9fa; border-radius: 12px; padding: 15px; margin-top: 20px; }
+        .summary-item { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 5px 0; border-bottom: 1px solid #eee; }
+        .summary-item:last-child { border: none; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: header}"></div>
+
+<div class="container-fluid py-5" style="max-width: 1300px;">
+    <div class="row">
+
+        <!-- SIDEBAR GAUCHE -->
+        <aside class="col-lg-3">
+            <div class="filter-card shadow-sm">
+                <h6 class="font-weight-bold mb-1"><i class="fas fa-sliders-h mr-2"></i> Filters</h6>
+                <p class="text-muted extra-small small">Refine by type and date</p>
+
+                <p class="filter-label">Type</p>
+                <a th:href="@{/events(type='Conference')}" class="filter-item">
+                    <span><i class="fas fa-microphone-alt mr-2"></i> Conference</span>
+                    <span class="count" th:text="${confCount}">0</span>
+                </a>
+                <a th:href="@{/events(type='Seminar')}" class="filter-item">
+                    <span><i class="fas fa-graduation-cap mr-2"></i> Seminar</span>
+                    <span class="count" th:text="${semCount}">0</span>
+                </a>
+                <a th:href="@{/events(type='Workshop')}" class="filter-item">
+                    <span><i class="fas fa-tools mr-2"></i> Workshop</span>
+                    <span class="count" th:text="${workCount}">0</span>
+                </a>
+
+                <p class="filter-label">Year</p>
+                <a th:href="@{/events(year=2025)}" class="filter-item">
+                    <span>2025</span><span class="count">6</span>
+                </a>
+
+                <div class="summary-box">
+                    <p class="filter-label mt-0 mb-2">Summary</p>
+                    <div class="summary-item"><span>Total events</span> <strong th:text="${allEvents.size()}">0</strong></div>
+                    <div class="summary-item"><span>Upcoming</span> <strong class="text-primary" th:text="${upcomingCount}">0</strong></div>
+                    <div class="summary-item"><span>Archives</span> <strong th:text="${archivesCount}">0</strong></div>
+                </div>
+
+                <a th:href="@{/events}" class="btn btn-sm btn-block border mt-3 font-weight-bold text-muted" style="border-radius:10px">
+                    Clear all filters
+                </a>
+            </div>
+        </aside>
+
+        <!-- CONTENU PRINCIPAL -->
+        <main class="col-lg-9 pl-lg-4">
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <h2 class="font-weight-bold mb-1">Événements</h2>
+                    <p class="text-muted small">Conferences, seminars, and workshops</p>
+                </div>
+                <!-- BOUTON ADD : Fonctionnel si vous avez une route d'ajout -->
+                <button class="btn btn-primary-blue shadow-sm btn-action" th:if="${user != null and user.role == 'DIRECTOR'}">
+                    <i class="fas fa-plus mr-2"></i> Add event
+                </button>
+            </div>
+
+            <!-- SEARCH BAR DYNAMIQUE -->
+            <form th:action="@{/events}" method="get" class="d-flex mb-4">
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" name="query" class="form-control search-input shadow-sm" placeholder="Search events...">
+                </div>
+                <select name="sort" class="form-control shadow-sm ml-3 border-0 font-weight-bold" style="width: 180px; border-radius: 12px;" onchange="this.form.submit()">
+                    <option value="soonest">Soonest first</option>
+                    <option value="latest">Latest first</option>
+                </select>
+            </form>
+
+            <!-- ONGLETS (TABS) FONCTIONNELS -->
+            <div class="tab-nav">
+                <a th:href="@{/events(view='upcoming')}" class="tab-link" th:classappend="${currentView == 'upcoming' ? 'active' : ''}">
+                    <i class="far fa-calendar-alt mr-2"></i> Upcoming
+                </a>
+                <a th:href="@{/events(view='archives')}" class="tab-link" th:classappend="${currentView == 'archives' ? 'active' : ''}">
+                    <i class="fas fa-archive mr-2"></i> Archives
+                </a>
+            </div>
+
+            <!-- LISTE DES CARTES -->
+            <div th:each="event : ${allEvents}" class="event-card shadow-sm">
+                <!-- BLOC DATE GAUCHE -->
+                <div class="date-side">
+                    <div class="day" th:text="${#temporals.format(event.date, 'dd')}">20</div>
+                    <div class="month" th:text="${#temporals.format(event.date, 'MMM')}">JUN</div>
+                </div>
+
+                <!-- CONTENU DROITE -->
+                <div class="event-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="badge-type"
+                              th:classappend="${'type-' + #strings.toLowerCase(event.type)}"
+                              th:text="${'📚 ' + event.type}">Type</span>
+                        <span class="text-muted small font-weight-bold"><i class="far fa-clock mr-1"></i> 09:00 – 17:00</span>
+                    </div>
+
+                    <h4 class="event-title" th:text="${event.title}">Titre de l'événement</h4>
+
+                    <div class="meta-info">
+                        <i class="fas fa-map-marker-alt"></i> <span th:text="${event.location}">Lieu</span>
+                    </div>
+                    <div class="meta-info">
+                        <i class="fas fa-users"></i> Organisé par <strong class="text-dark ml-1">Pr. Benabbou</strong>
+                    </div>
+
+                    <!-- BOUTONS ACTIONS -->
+                    <!--<div class="card-actions">
+                        <a href="#" class="btn-action btn-outline text-decoration-none">
+                            <i class="far fa-file-alt mr-2"></i> Program
+                        </a>
+                        <a href="#" class="btn-action btn-primary-blue text-decoration-none">
+                            Register <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
+                    </div>-->
+                    <!-- BOUTONS ACTIONS DYNAMIQUES
+                    <div class="card-actions align-items-center">
+                        <button type="button" class="btn-action btn-outline"
+                                th:onclick="'alert(\'Programme de : ' + ${event.title} + '\\nLieu : ' + (${event.lieu != null ? event.lieu : event.location}) + '\\nDate : ' + ${event.date} + '\')'">
+                            <i class="far fa-file-alt mr-2"></i> Program
+                        </button>
+
+                        <a th:if="${user == null}" th:href="@{/login}" class="btn-action btn-primary-blue text-decoration-none">
+                            Register <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
+
+                        <form th:if="${user != null}" th:action="@{'/member/events/register/' + ${event.id}}" method="post" class="d-inline">
+                            <button type="submit"
+                                    th:disabled="${user.participatingEvents != null and user.participatingEvents.contains(event)}"
+                                    th:classappend="${user.participatingEvents != null and user.participatingEvents.contains(event)} ? 'btn-success text-white' : 'btn-primary-blue text-white'"
+                                    class="btn-action border-0">
+                                <span th:if="${user.participatingEvents != null and user.participatingEvents.contains(event)}">
+                                    <i class="fas fa-check mr-1"></i> Inscrit
+                                </span>
+                                <span th:unless="${user.participatingEvents != null and user.participatingEvents.contains(event)}">
+                                    Register <i class="fas fa-arrow-right ml-2"></i>
+                                </span>
+                            </button>
+                        </form>
+                    </div>-->
+                    <!-- BOUTONS ACTIONS DYNAMIQUES -->
+                    <!-- BOUTONS ACTIONS SÉCURISÉS -->
+                    <div class="card-actions align-items-center">
+                        <!-- 1. Bouton Program : Affiche les détails par recherche -->
+                        <a th:href="@{'/events?query=' + ${event.title}}" class="btn-action btn-outline text-decoration-none">
+                            <i class="far fa-file-alt mr-2"></i> Program
+                        </a>
+
+                        <!-- 2. Bouton Register si NON CONNECTÉ -->
+                        <a th:if="${user == null}" th:href="@{/login}" class="btn-action btn-primary-blue text-decoration-none">
+                            Register <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
+
+                        <!-- 3. Bouton Register si CONNECTÉ (Inscription directe sans crash Hibernate) -->
+                        <form th:if="${user != null}" th:action="@{'/member/events/register/' + ${event.id}}" method="post" class="d-inline">
+                            <button type="submit" class="btn-action btn-primary-blue text-white border-0">
+                                S'inscrire <i class="fas fa-check ml-1"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MESSAGE SI VIDE -->
+            <div th:if="${allEvents.empty}" class="text-center py-5 bg-white rounded shadow-sm">
+                <i class="fas fa-calendar-times fa-3x text-light mb-3"></i>
+                <p class="text-muted">No events found for this category.</p>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

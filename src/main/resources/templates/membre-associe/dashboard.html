@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon Espace | Membre Associé</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); }
+        .main-content { margin-left: 280px; padding: 30px; }
+
+        /* Styles des icônes du Header (Recherche, Message, Cloche) */
+        .header-icon-btn {
+            width: 42px; height: 42px;
+            background: white; border: 1px solid #eef0f2;
+            border-radius: 12px; position: relative;
+            color: #64748b; display: flex; align-items: center;
+            justify-content: center; cursor: pointer; transition: 0.2s;
+        }
+        .header-icon-btn:hover { background: #f8fafc; color: var(--primary); transform: translateY(-2px); }
+        .icon-badge {
+            position: absolute; top: -5px; right: -5px;
+            background: #0a66c2; color: white;
+            font-size: 0.6rem; padding: 2px 6px;
+            border-radius: 50%; font-weight: 800; border: 2px solid white;
+        }
+
+        /* Dropdown Notifications */
+        .badge-circle {
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; flex-shrink: 0;
+        }
+        .notif-item { transition: background-color 0.2s; cursor: pointer; }
+        .notif-item:hover { background-color: #f8fafc !important; }
+
+        /* Avatar et Cartes */
+        .avatar-large { width: 60px; height: 60px; background: #eef6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #004a99; font-weight: 800; font-size: 1.2rem; }
+        .kpi-card { background: white; border-radius: 16px; border: 1px solid #eef0f2; padding: 20px; text-align: center; height: 100%; transition: 0.2s; }
+        .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .kpi-label { font-size: 0.7rem; font-weight: 700; color: #64748b; margin-bottom: 5px; display: block; text-transform: uppercase; }
+        .kpi-value { font-size: 1.8rem; font-weight: 800; color: #1e293b; display: block; }
+
+        .btn-light { background: white; border: 1px solid #eef0f2; border-radius: 12px; font-weight: 600; padding: 12px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+        .btn-light:hover { border-color: var(--primary); color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<!-- Inclusion de la sidebar -->
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='dashboard')}"></div>
+
+<main class="main-content">
+
+    <!-- HEADER AVEC LA RECHERCHE, LES MESSAGES ET LA CLOCHE -->
+    <header class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="font-weight-bold mb-0">Tableau de bord</h4>
+            <p class="text-muted small mb-0" th:text="${#temporals.format(#temporals.createNow(), 'd MMMM yyyy') + ' — Membre Associé — Laboratoire d''origine : ' + (user.laboratoireOrigine != null ? user.laboratoireOrigine : 'Non spécifié')}"></p>
+        </div>
+
+        <div class="d-flex align-items-center">
+            <!-- 1. Loupe Recherche -->
+            <!--<button class="header-icon-btn mr-3" title="Recherche">
+                <i class="fas fa-search"></i>
+            </button>-->
+            <form th:action="@{/search}" method="get" class="d-inline-block mr-3">
+                <div style="position: relative; display: flex; align-items: center;">
+                    <i class="fas fa-search" style="position: absolute; left: 14px; color: #9ca3af; font-size: 0.85rem; pointer-events: none;"></i>
+                    <input type="text" name="query" class="form-control" placeholder="Rechercher..."
+                           style="background-color: white; border: 1px solid #eef0f2; border-radius: 12px; padding-left: 35px; font-size: 0.85rem; width: 180px; height: 42px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);" required>
+                </div>
+            </form>
+
+            <!-- 2. Bulle Message bleu (Pointant sur ses discussions d'événements autorisées) -->
+            <a th:href="@{/member/discussions}" class="header-icon-btn mr-3 text-decoration-none" title="Discussions événements">
+                <i class="fas fa-comment-dots"></i>
+                <span class="icon-badge">7</span>
+            </a>
+
+            <!-- 3. Cloche Notifications (Menu déroulant dynamique) -->
+            <div class="dropdown d-inline-block">
+                <button class="header-icon-btn position-relative" type="button" id="notifDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span th:if="${unreadNotifsCount != null and unreadNotifsCount > 0}" class="icon-badge bg-danger" th:text="${unreadNotifsCount}">0</span>
+                </button>
+
+                <!-- Menu déroulant de la cloche -->
+                <div class="dropdown-menu dropdown-menu-right shadow-lg border-0 p-0" aria-labelledby="notifDropdown" style="width: 360px; border-radius: 18px; overflow: hidden; margin-top: 10px;">
+                    <div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="font-weight-bold mb-0 text-dark">Notifications</h6>
+                        <small class="badge badge-light text-primary font-weight-bold" th:text="${(unreadNotifsCount != null ? unreadNotifsCount : 0) + ' nouvelles'}">0 nouvelles</small>
+                    </div>
+
+                    <div style="max-height: 380px; overflow-y: auto;">
+                        <div th:each="n : ${notifications}" class="p-3 border-bottom d-flex align-items-start notif-item"
+                             th:style="${!n.read} ? 'background-color: #f0f7ff;' : 'background-color: white;'">
+
+                            <div class="mr-3 mt-1">
+                                <span th:if="${n.type == 'EVENT'}" class="badge-circle bg-info text-white"><i class="far fa-calendar-check"></i></span>
+                                <span th:if="${n.type == 'VALIDATION'}" class="badge-circle bg-success text-white"><i class="fas fa-check"></i></span>
+                                <span th:if="${n.type == 'DOCUMENT'}" class="badge-circle bg-warning text-white"><i class="far fa-file-alt"></i></span>
+                            </div>
+
+                            <div class="flex-grow-1">
+                                <p class="mb-1 small font-weight-bold text-dark" th:text="${n.title}">Titre</p>
+                                <p class="mb-1 text-muted extra-small" style="font-size: 0.8rem; line-height: 1.3;" th:text="${n.message}">Message...</p>
+                                <small class="text-muted" style="font-size: 0.7rem;" th:text="${#temporals.format(n.dateCreation, 'dd MMM à HH:mm')}">Date</small>
+                            </div>
+                        </div>
+
+                        <div th:if="${notifications == null or notifications.empty}" class="p-4 text-center text-muted small">
+                            <i class="far fa-bell-slash fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">Aucune notification pour le moment.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- BANNIÈRE PROFIL ASSOCIE -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="avatar-large" th:text="${(user.firstName != null ? user.firstName.substring(0,1) : 'A') + (user.lastName != null ? user.lastName.substring(0,1) : 'C')}">AC</div>
+                <div class="ml-3">
+                    <h5 class="font-weight-bold mb-0" th:text="${user.firstName + ' ' + user.lastName}">Dr. Amine Chraibi</h5>
+                    <p class="text-muted small mb-0">
+                        Membre Associé · Collaborateur externe (<span th:text="${user.laboratoireOrigine != null ? user.laboratoireOrigine : 'Non spécifié'}">LTI Rabat</span>)
+                    </p>
+                </div>
+                <div class="ml-auto text-right">
+                    <span class="badge badge-info mb-1 px-3 py-2" style="border-radius:8px;" th:text="'Droit publication: ' + (${canPublish} ? 'Accordé' : 'Restreint')">Droit publication</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="kpi-card shadow-sm">
+                <span class="kpi-label">MES PUBLICATIONS</span>
+                <span class="kpi-value" th:text="${myPubsCount}">0</span>
+                <small class="text-muted">Total depuis affiliation</small>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="kpi-card shadow-sm">
+                <span class="kpi-label">ÉVÉNEMENTS ACCESSIBLES</span>
+                <span class="kpi-value" th:text="${accessibleEventsCount}">0</span>
+                <small class="text-muted">Ouverts aux associés</small>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="kpi-card shadow-sm">
+                <span class="kpi-label">DOCUMENTS ACCESSIBLES</span>
+                <span class="kpi-value text-primary" th:text="${accessibleDocsCount != null ? accessibleDocsCount : 0}">0</span>
+                <small class="text-muted">Liés à mes événements</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Raccourcis -->
+    <div class="d-flex mb-4">
+        <a th:if="${canPublish}" href="/member/my-publications" class="btn btn-light mr-3">
+            <i class="fas fa-plus mr-2 text-primary"></i> Ajouter publication
+        </a>
+        <a href="/member/events" class="btn btn-light mr-3">
+            <i class="far fa-calendar-alt mr-2 text-primary"></i> Voir événements
+        </a>
+        <a href="/profile" class="btn btn-light">
+            <i class="far fa-user mr-2 text-primary"></i> Mon profil
+        </a>
+    </div>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

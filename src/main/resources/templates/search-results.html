@@ -1,0 +1,127 @@
+<!--<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+<div th:replace="~{fragments/navbar :: header}"></div>
+<div class="container mt-5">
+    <h3 class="mb-4">Search results for: <span class="text-primary" th:text="${query}"></span></h3>
+    <div class="list-group">
+        <div th:each="m : ${results}" class="list-group-item border-0 shadow-sm mb-2 rounded">
+            <h5 class="mb-1" th:text="|${m.firstName} ${m.lastName}|"></h5>
+            <p class="mb-1 text-muted" th:text="${m.status}"></p>
+        </div>
+    </div>
+    <div th:if="${results.empty}" class="alert alert-warning">No members found matching that name.</div>
+</div>
+</body>
+</html>-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Résultats de recherche | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); }
+        .main-content { padding: 40px; margin-left: 280px; }
+        .public-content { padding: 40px; max-width: 1000px; margin: auto; }
+        .result-card { background: white; border-radius: 16px; border: 1px solid #ebedf0; padding: 20px; margin-bottom: 15px; transition: 0.2s; }
+        .result-card:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.04); }
+        .section-header { font-size: 0.8rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<!-- Si connecté, afficher la sidebar du labo, sinon la navbar publique -->
+<!--<div th:if="${user != null}" th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='search')}"></div>
+<div th:if="${user == null}" th:replace="~{fragments/navbar :: header}"></div>-->
+<!-- Inclusion sécurisée : si pas connecté, on met UNIQUEMENT la navbar publique -->
+<div th:if="${user == null}">
+    <div th:replace="~{fragments/navbar :: header}"></div>
+</div>
+
+<!-- Si connecté, on met UNIQUEMENT la sidebar du labo -->
+<div th:if="${user != null}">
+    <div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='search')}"></div>
+</div>
+
+<main th:class="${user != null} ? 'main-content' : 'public-content'">
+    <div class="mb-4">
+        <h3 class="font-weight-bold mb-1">Résultats pour : "<span th:text="${query}">IA</span>"</h3>
+        <p class="text-muted small" th:text="${totalFound + ' élément(s) trouvé(s)'}">0 élément</p>
+    </div>
+
+    <!-- 1. MEMBRES TROUVÉS -->
+    <div th:if="${!members.empty}" class="mb-5">
+        <p class="section-header"><i class="fas fa-users mr-2 text-primary"></i> Membres (<span th:text="${members.size()}"></span>)</p>
+        <div class="row">
+            <div th:each="m : ${members}" class="col-md-6 mb-3">
+                <div class="result-card d-flex align-items-center">
+                    <div class="rounded-circle mr-3 p-2 text-center text-primary font-weight-bold" style="width:45px; height:45px; background:#eef6ff;"
+                         th:text="${(m.firstName != null ? m.firstName.substring(0,1) : '') + (m.lastName != null ? m.lastName.substring(0,1) : '')}"></div>
+                    <!--<div>
+                        <h6 class="font-weight-bold mb-0" th:text="${m.firstName + ' ' + m.lastName}">Nom</h6>
+                        <small class="text-muted" th:text="${m.role + (m.team != null ? ' — ' + m.team.name : '')}"></small>
+                    </div>-->
+                    <div>
+                        <h6 class="font-weight-bold mb-0" th:text="${m.firstName + ' ' + m.lastName}">Nom</h6>
+                        <!-- Sécurisé avec ?.name (Étape 3.f) -->
+                        <small class="text-muted" th:text="${m.role + (m.team != null ? ' — ' + m.team?.name : '')}"></small>
+                        <!-- L'email n'est visible QUE pour les membres connectés, JAMAIS pour les visiteurs (Étape 3.a) -->
+                        <small th:if="${user != null}" class="text-muted d-block font-italic" style="font-size: 0.75rem;" th:text="${m.email}"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. PUBLICATIONS TROUVÉES -->
+    <div th:if="${!publications.empty}" class="mb-5">
+        <p class="section-header"><i class="fas fa-book mr-2 text-success"></i> Publications (<span th:text="${publications.size()}"></span>)</p>
+        <div th:each="p : ${publications}" class="result-card">
+            <h6 class="font-weight-bold mb-1" th:text="${p.title}">Titre</h6>
+            <small class="text-muted" th:text="${p.journal + ' (' + p.year + ')'}"></small>
+        </div>
+    </div>
+
+    <!-- 3. ÉVÉNEMENTS TROUVÉS -->
+    <div th:if="${!events.empty}" class="mb-5">
+        <p class="section-header"><i class="far fa-calendar-alt mr-2 text-info"></i> Événements (<span th:text="${events.size()}"></span>)</p>
+        <div th:each="e : ${events}" class="result-card d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="font-weight-bold mb-1" th:text="${e.title}">Titre</h6>
+                <small class="text-muted" th:text="${e.type + ' · ' + e.lieu}"></small>
+            </div>
+            <span class="badge badge-light" th:text="${#temporals.format(e.date, 'dd MMM yyyy')}">Date</span>
+        </div>
+    </div>
+
+    <!-- 4. DOCUMENTS TROUVÉS (Membres uniquement) -->
+    <div th:if="${!documents.empty}" class="mb-5">
+        <p class="section-header"><i class="far fa-file-pdf mr-2 text-danger"></i> Documents (<span th:text="${documents.size()}"></span>)</p>
+        <div th:each="d : ${documents}" class="result-card d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="font-weight-bold mb-1" th:text="${d.title}">Titre</h6>
+                <small class="text-muted" th:text="${d.type}"></small>
+            </div>
+            <a th:href="@{'/member/documents/download/' + ${d.id}}" class="btn btn-sm btn-outline-primary rounded-pill">Télécharger</a>
+        </div>
+    </div>
+
+    <!-- AUCUN RÉSULTAT -->
+    <div th:if="${totalFound == 0}" class="text-center p-5 bg-white rounded-lg border border-dashed">
+        <i class="fas fa-search fa-3x text-muted mb-3 opacity-25"></i>
+        <h6 class="font-weight-bold text-muted mb-1">Aucun résultat trouvé</h6>
+        <p class="text-muted small">Essayez avec d'autres termes (ex: IA, Conférence, Nom de chercheur...)</p>
+    </div>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

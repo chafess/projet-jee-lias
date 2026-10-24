@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Publications | LIAS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <style>
+        /* 1. VARIABLES ET SYSTÈME DE DESIGN LIAS */
+        :root {
+            --primary: #0a66c2;
+            --bg-light: #f3f6f8;
+            --green: #1a8a3a;
+            --green-bg: #e8f5e9;
+            --yellow: #b8860b;
+            --yellow-bg: #fff3e0;
+            --blue-bg: #e3f2fd;
+            --text-muted: #666d74;
+            --input-bg: #f4f7f9;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            color: #333;
+        }
+
+        /* 2. MISE EN PAGE PRINCIPALE */
+        .main-content {
+            margin-left: 280px;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+
+        /* 3. CARTES DE STATISTIQUES (KPIs) */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 12px;
+            border: none;
+        }
+        .icon-box {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bg-blue-light { background-color: var(--blue-bg); }
+        .text-blue { color: var(--primary); }
+        .bg-green-light { background-color: var(--green-bg); }
+        .text-green { color: var(--green); }
+        .bg-yellow-light { background-color: var(--yellow-bg); }
+        .text-yellow { color: var(--yellow); }
+
+        /* 4. TABLEAU ET BADGES */
+        .table thead th {
+            background-color: #fafbfc;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid #ebedf0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+        .badge-published { background: var(--green-bg); color: var(--green); }
+        .badge-review { background: var(--yellow-bg); color: var(--yellow); }
+        .btn-icon { background: none; border: none; cursor: pointer; padding: 5px; font-size: 0.9rem; }
+
+        /* 5. DESIGN DU MODAL (IDENTIQUE PREMIÈRE IMAGE) */
+        .custom-modal {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 3% auto;
+            padding: 30px !important;
+            border-radius: 24px !important;
+            width: 90%;
+            max-width: 620px !important;
+            border: none;
+            max-height: 90vh; /* La modale ne dépassera jamais l'écran */
+            overflow-y: auto; /* Active le scroll intérieur propre avec la molette */
+        }
+
+        .close-circle {
+            width: 32px; height: 32px;
+            background: #f3f6f8;
+            border-radius: 50%;
+            border: none;
+            display: flex; align-items: center; justify-content: center;
+            color: #99a1ad; font-size: 1.2rem; transition: 0.2s;
+        }
+        .close-circle:hover { background: #e2e8f0; color: #333; }
+
+        .avatar-circle-large {
+            width: 52px; height: 52px;
+            background: #4a6ea9; /* Le bleu spécifique de l'image */
+            color: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: 1rem; text-transform: uppercase;
+        }
+
+        .label-custom {
+            font-size: 0.85rem; font-weight: 600; color: #333; margin-bottom: 8px;
+        }
+
+        .form-input {
+            background-color: var(--input-bg) !important; /* Gris-bleu très clair */
+            border: none !important;
+            border-radius: 12px !important;
+            padding: 12px 16px !important;
+            font-size: 0.9rem !important;
+            color: #333 !important;
+            width: 100%;
+        }
+        .form-input::placeholder { color: #cbd5e0; }
+
+        .auto-detect-bar {
+            background-color: var(--input-bg);
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            color: #718096;
+            display: flex; align-items: center;
+        }
+        .auto-detect-bar i { color: #4a5568; font-size: 1rem; }
+
+        .btn-cancel {
+            background: #f1f3f5; border: none; padding: 10px 25px;
+            border-radius: 10px; font-weight: 600; color: #4a5568; transition: 0.2s;
+        }
+        .btn-post {
+            background: var(--primary); border: none; padding: 10px 35px;
+            border-radius: 10px; font-weight: 600; color: white; transition: 0.2s;
+        }
+        .btn-post:hover { background: #084d91; transform: translateY(-1px); }
+
+        /* Utilitaires */
+        .extra-small { font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+
+<!--<div th:replace="fragments/sidebar :: sidebar"></div>-->
+<div th:replace="~{fragments/sidebar ::sidebar(user=${user}, activePage='publications')}"></div>
+
+<main class="main-content">
+    <!-- Header -->
+    <header class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 font-weight-bold mb-1 text-dark">📚 My Publications</h1>
+            <p class="text-muted">Manage your personal research output</p>
+        </div>
+        <button class="btn btn-primary px-4 shadow-sm" onclick="openModal('addPubModal')">
+            <i class="fas fa-plus mr-2"></i> Add Publication
+        </button>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-grid mb-4">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center">
+                <div class="icon-box bg-blue-light text-blue mr-3"><i class="fas fa-file-alt"></i></div>
+                <div>
+                    <span class="text-muted small font-weight-bold">Total</span>
+                    <h2 class="mb-0 h4" th:text="${myPubsCount}">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center">
+                <div class="icon-box bg-green-light text-green mr-3"><i class="fas fa-check-circle"></i></div>
+                <div>
+                    <span class="text-muted small font-weight-bold">Published</span>
+                    <h2 class="mb-0 h4" th:text="${publishedCount}">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center">
+                <div class="icon-box bg-yellow-light text-yellow mr-3"><i class="fas fa-clock"></i></div>
+                <div>
+                    <span class="text-muted small font-weight-bold">In Review</span>
+                    <h2 class="mb-0 h4" th:text="${reviewCount}">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                    <tr>
+                        <th>TITLE</th>
+                        <th>JOURNAL</th>
+                        <th>YEAR</th>
+                        <th>STATUS</th>
+                        <th class="text-right">ACTIONS</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="pub : ${myPublications}">
+                        <td><strong class="text-dark" th:text="${pub.title}">Titre</strong></td>
+                        <td class="text-muted" th:text="${pub.journal}">Journal</td>
+                        <td th:text="${pub.year}">2024</td>
+                        <td>
+                            <span th:if="${pub.status == 'Published'}" class="badge badge-published">Published</span>
+                            <span th:if="${pub.status == 'Under Review'}" class="badge badge-review">Under Review</span>
+                        </td>
+                        <td class="text-right">
+                            <!--<button class="btn-icon text-primary"><i class="fas fa-pencil-alt"></i></button>-->
+                            <button class="btn-icon text-primary"
+                                    th:data-id="${pub.id}"
+                                    th:data-title="${pub.title}"
+                                    th:data-journal="${pub.journal}"
+                                    th:data-year="${pub.year}"
+                                    th:data-status="${pub.status}"
+                                    th:data-abstract="${pub.abstractText}"
+                                    th:data-coauthors="${pub.coAuthors}"
+                                    th:data-doi="${pub.doi}"
+                                    th:data-volume="${pub.volume}"
+                                    onclick="editPublication(this)">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            <!-- MODAL: EDIT PUBLICATION -->
+                            <div id="editPubModal" class="custom-modal">
+                                <div class="modal-content shadow-lg border-0">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="font-weight-bold text-dark">Edit your research</h5>
+                                        <button class="close-circle" onclick="closeModal('editPubModal')">&times;</button>
+                                    </div>
+
+                                    <form th:action="@{/member/publications/update}" method="post">
+                                        <!-- CHAMP CACHÉ POUR L'ID -->
+                                        <input type="hidden" name="id" id="edit-id">
+
+                                        <div class="form-group mb-3">
+                                            <label class="label-custom">Paper Title</label>
+                                            <input type="text" name="title" id="edit-title" class="form-input" required>
+                                        </div>
+
+                                        <div class="form-group mb-3">
+                                            <label class="label-custom">Abstract / Description</label>
+                                            <textarea name="abstractText" id="edit-abstract" class="form-input" rows="3"></textarea>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6 form-group mb-3">
+                                                <label class="label-custom">Journal / Conference</label>
+                                                <input type="text" name="journal" id="edit-journal" class="form-input">
+                                            </div>
+                                            <div class="col-md-3 form-group mb-3">
+                                                <label class="label-custom">Year</label>
+                                                <input type="number" name="year" id="edit-year" class="form-input" required>
+                                            </div>
+                                            <div class="col-md-3 form-group mb-3">
+                                                <label class="label-custom">Status</label>
+                                                <select name="status" id="edit-status" class="form-input">
+                                                    <option value="Published">Published</option>
+                                                    <option value="Under Review">Under Review</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-end align-items-center mt-4">
+                                            <button type="button" class="btn-cancel mr-2" onclick="closeModal('editPubModal')">Cancel</button>
+                                            <button type="submit" class="btn-post">Update Publication</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            <button class="btn-icon text-danger" th:onclick="'confirmDelete(' + ${pub.id} + ')'">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(myPublications)}">
+                        <td colspan="5" class="text-center py-5 text-muted">No publications found. Click "Add Publication" to start.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- MODAL ADD -->
+<!-- MODAL: SHARE YOUR RESEARCH -->
+<div id="addPubModal" class="custom-modal">
+    <div class="modal-content shadow-lg border-0">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="font-weight-bold text-dark" style="font-size: 1.1rem;">Share your research</h5>
+            <button class="close-circle" onclick="closeModal('addPubModal')">&times;</button>
+        </div>
+
+        <!-- User Profile Info -->
+        <div class="d-flex align-items-center mb-4">
+            <div class="avatar-circle-large mr-3"
+                 th:text="${#strings.substring(user.firstName,0,1) + #strings.substring(user.lastName,0,1)}">KA</div>
+            <div>
+                <h6 class="mb-0 font-weight-bold text-dark" th:text="${user.firstName + ' ' + user.lastName}">Kawter Ait Omar</h6>
+                <p class="extra-small text-muted mb-0">
+                    <span th:text="${user.role}">PhD Student</span> ·
+                    <span th:text="${user.team != null ? user.team.name : 'No Team'}">AI Research Team</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Formulaire -->
+        <form th:action="@{/member/publications/save}" method="post">
+            <div class="form-group mb-3">
+                <label class="label-custom">Paper Title</label>
+                <input type="text" name="title" class="form-input" placeholder="Deep Learning-Based Approaches Using Medical Imaging..." required>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="label-custom">Abstract / Description</label>
+                <textarea name="abstractText" class="form-input" rows="3" placeholder="Brain tumor detection remains one of the most critical challenges..."></textarea>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="label-custom">Co-authors</label>
+                <input type="text" name="coAuthors" class="form-input" placeholder="Sanaa El Filali, Habib Ben Lahmar, Dr. Sarah Chen">
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 form-group mb-3">
+                    <label class="label-custom">Journal / Conference</label>
+                    <input type="text" name="journal" class="form-input" placeholder="International Journal of...">
+                </div>
+                <div class="col-md-3 form-group mb-3">
+                    <label class="label-custom">Year</label>
+                    <input type="number" name="year" class="form-input" placeholder="2024" required>
+                </div>
+                <div class="col-md-3 form-group mb-3">
+                    <label class="label-custom">Volume</label>
+                    <input type="text" name="volume" class="form-input" placeholder="Vol 20, Issue 7">
+                </div>
+            </div>
+
+            <div class="form-group mb-4">
+                <label class="label-custom">DOI Link</label>
+                <input type="url" name="doi" class="form-input" placeholder="https://doi.org/10.3991/ijoe.v20i07.12345">
+            </div>
+
+            <!-- Auto-detect bar -->
+            <div class="auto-detect-bar mb-4">
+                <i class="fas fa-robot mr-2"></i>
+                <span>Auto-detected: <strong th:text="${user.team != null ? user.team.name : 'General Team'}">AI Research Team</strong> — based on your membership</span>
+            </div>
+
+            <!-- Footer Buttons -->
+            <div class="d-flex justify-content-end align-items-center">
+                <button type="button" class="btn-cancel mr-2" onclick="closeModal('addPubModal')">Cancel</button>
+                <button type="submit" class="btn-post">Post</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openModal(id) { document.getElementById(id).style.display = "block"; }
+    function closeModal(id) { document.getElementById(id).style.display = "none"; }
+
+    window.onclick = function(event) {
+        if (event.target.className === "custom-modal") { event.target.style.display = "none"; }
+    }
+
+    function confirmDelete(id) {
+        if(confirm("Are you sure you want to delete this publication?")) {
+            window.location.href = "/member/publications/delete/" + id;
+        }
+    }
+    function editPublication(button) {
+        // 1. Récupérer les données depuis les attributs data- du bouton
+        const id = button.getAttribute('data-id');
+        const title = button.getAttribute('data-title');
+        const journal = button.getAttribute('data-journal');
+        const year = button.getAttribute('data-year');
+        const status = button.getAttribute('data-status');
+        const abstract = button.getAttribute('data-abstract');
+
+        // 2. Remplir les champs de la modale d'édition
+        document.getElementById('edit-id').value = id;
+        document.getElementById('edit-title').value = title;
+        document.getElementById('edit-journal').value = journal;
+        document.getElementById('edit-year').value = year;
+        document.getElementById('edit-status').value = status;
+        document.getElementById('edit-abstract').value = abstract;
+
+        // 3. Ouvrir la modale
+        openModal('editPubModal');
+    }
+</script>
+
+</body>
+</html>

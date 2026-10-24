@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Mes Notifications | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); }
+        .main-content { margin-left: 280px; padding: 40px; }
+
+        .notif-container { max-width: 800px; }
+        .notif-card { background: white; border-radius: 16px; padding: 20px 24px; border: 1px solid #ebedf0; margin-bottom: 12px; transition: 0.2s; display: flex; align-items: flex-start; }
+        .notif-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+
+        /* Icônes par type de notification */
+        .icon-circle { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-right: 18px; flex-shrink: 0; }
+        .icon-event { background: #e0f2fe; color: #0284c7; }
+        .icon-validation { background: #dcfce7; color: #16a34a; }
+        .icon-document { background: #fef3c7; color: #d97706; }
+
+        /* Badges */
+        .badge-type { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.5px; }
+        .badge-event { background: #f0f9ff; color: #0369a1; }
+        .badge-validation { background: #f0fdf4; color: #15803d; }
+        .badge-document { background: #fffbeb; color: #b45309; }
+    </style>
+</head>
+<body>
+
+<!-- Inclusion de la sidebar -->
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='notifications')}"></div>
+
+<main class="main-content">
+    <div class="notif-container">
+
+        <!-- En-tête -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="font-weight-bold mb-1">Centre de notifications</h3>
+                <p class="text-muted small mb-0">Alertes sur les événements, documents et validations du laboratoire</p>
+            </div>
+        </div>
+
+        <!-- Liste des notifications -->
+        <div th:each="n : ${notifications}" class="notif-card shadow-sm">
+            <!-- Icône dynamique selon le type -->
+            <div class="icon-circle"
+                 th:classappend="${n.type == 'EVENT'} ? 'icon-event' : (${n.type == 'VALIDATION'} ? 'icon-validation' : 'icon-document')">
+                <i th:if="${n.type == 'EVENT'}" class="far fa-calendar-check"></i>
+                <i th:if="${n.type == 'VALIDATION'}" class="fas fa-check-circle"></i>
+                <i th:if="${n.type == 'DOCUMENT'}" class="far fa-file-alt"></i>
+            </div>
+
+            <!-- Contenu textuel -->
+            <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="badge-type"
+                          th:classappend="${n.type == 'EVENT'} ? 'badge-event' : (${n.type == 'VALIDATION'} ? 'badge-validation' : 'badge-document')"
+                          th:text="${n.type == 'EVENT' ? 'Événement' : (n.type == 'VALIDATION' ? 'Validation' : 'Document')}">TYPE</span>
+                    <small class="text-muted" th:text="${#temporals.format(n.dateCreation, 'dd MMM yyyy à HH:mm')}">Date</small>
+                </div>
+                <h6 class="font-weight-bold mb-1 text-dark" th:text="${n.title}">Titre de l'alerte</h6>
+                <p class="text-muted small mb-0" th:text="${n.message}">Détail du message...</p>
+            </div>
+        </div>
+
+        <!-- État vide si aucune notification -->
+        <div th:if="${notifications.empty}" class="text-center p-5 bg-white rounded-lg border border-dashed shadow-sm">
+            <i class="far fa-bell-slash fa-3x mb-3 text-muted opacity-50"></i>
+            <h6 class="font-weight-bold text-muted mb-1">Aucune notification</h6>
+            <p class="small text-muted mb-0">Vous êtes à jour ! Aucune nouvelle alerte pour le moment.</p>
+        </div>
+
+    </div>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Communication Équipe | LIAS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0a66c2; --bg: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); }
+        .main-content { margin-left: 280px; padding: 30px; }
+        .chat-container { display: grid; grid-template-columns: 320px 1fr; background: white; border-radius: 20px; border: 1px solid #ebedf0; height: calc(100vh - 120px); overflow: hidden; }
+        .threads-sidebar { border-right: 1px solid #f1f3f5; overflow-y: auto; padding: 20px; }
+        .thread-item { padding: 12px 16px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; text-decoration: none !important; color: inherit; display: block; border: 1px solid transparent; }
+        .thread-item:hover { background: #f8fafc; }
+        .thread-item.active { background: #eef6ff; border-color: #bfdbfe; color: var(--primary); }
+        .chat-area { display: flex; flex-direction: column; height: 100%; }
+        .chat-messages { flex-grow: 1; padding: 25px; overflow-y: auto; max-height: calc(100vh - 280px); display: flex; flex-direction: column; gap: 15px; }
+        .message-bubble { max-width: 70%; padding: 12px 18px; border-radius: 18px; font-size: 0.9rem; }
+        .msg-theirs { background: #f1f5f9; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .msg-mine { background: #0a66c2; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .chat-input-area { padding: 15px 20px; border-top: 1px solid #f1f3f5; background: white; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+<!-- Inclusion de la sidebar pour le Chef d'équipe -->
+<div th:replace="~{fragments/sidebar :: sidebar(user=${user}, activePage='team-chat')}"></div>
+
+<main class="main-content">
+    <div class="chat-container shadow-sm">
+
+        <!-- COLONNE GAUCHE : Liste des sujets de l'équipe -->
+        <div class="threads-sidebar">
+            <button class="btn btn-primary btn-block rounded-pill mb-3 font-weight-bold" data-toggle="modal" data-target="#newTeamTopicModal">
+                <i class="fas fa-plus mr-2"></i> Nouveau sujet
+            </button>
+
+            <!-- Liste des sujets existants -->
+            <div th:each="d : ${discussions}">
+                <a th:href="@{'/team/communication?open=' + ${d.id}}"
+                   class="thread-item" th:classappend="${openedDiscussion != null and openedDiscussion.id == d.id} ? 'active' : ''">
+                    <h6 class="font-weight-bold mb-1" th:text="${d.subject}">Sujet d'équipe</h6>
+                    <small class="text-muted" th:text="${#temporals.format(d.dateCreation, 'dd MMM HH:mm')}">Date</small>
+                </a>
+            </div>
+
+            <!-- Message d'état vide (avec le bouton toujours accessible au-dessus !) -->
+            <div th:if="${discussions.empty}" class="text-center text-muted small py-4">
+                <i class="fas fa-comments fa-2x mb-3 text-muted opacity-50"></i>
+                <p>Aucune discussion active dans votre équipe pour le moment.</p>
+            </div>
+        </div>
+
+        <!-- COLONNE DROITE : Messages et zone de réponse -->
+        <div class="chat-area">
+            <!-- Si un sujet est sélectionné -->
+            <div th:if="${openedDiscussion != null}" class="d-flex flex-column h-100">
+                <div class="p-3 border-bottom font-weight-bold d-flex justify-content-between align-items-center">
+                    <span th:text="${openedDiscussion.subject}">Titre de la discussion</span>
+                    <small class="badge badge-light text-primary font-weight-bold" th:text="${user.team != null ? user.team.name : 'Mon Équipe'}">Équipe</small>
+                </div>
+
+                <div class="chat-messages">
+                    <div th:each="msg : ${messages}"
+                         th:class="${msg.author.id == user.id} ? 'message-bubble msg-mine' : 'message-bubble msg-theirs'">
+                        <small class="d-block font-weight-bold mb-1" style="font-size: 0.75rem;"
+                               th:text="${msg.author.firstName + ' ' + msg.author.lastName}"></small>
+                        <span th:text="${msg.content}">Texte du message</span>
+                    </div>
+                </div>
+
+                <!-- Formulaire d'envoi de réponse -->
+                <div class="chat-input-area">
+                    <form th:action="@{'/team/communication/' + ${openedDiscussion.id} + '/reply'}" method="post" class="d-flex">
+                        <input type="text" name="content" class="form-control rounded-pill mr-2" placeholder="Écrivez à votre équipe..." required autocomplete="off">
+                        <button type="submit" class="btn btn-primary rounded-circle"><i class="fas fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Si aucun sujet n'est sélectionné -->
+            <div th:if="${openedDiscussion == null}" class="d-flex align-items-center justify-content-center h-100 text-muted">
+                Sélectionnez une discussion à gauche pour voir les échanges de l'équipe.
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<!-- MODALE : Créer un nouveau sujet d'équipe -->
+<div class="modal fade" id="newTeamTopicModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 p-3 shadow-lg" style="border-radius:20px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="font-weight-bold">Nouvelle discussion d'équipe</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form th:action="@{/team/communication/new}" method="post">
+                <div class="modal-body">
+                    <label class="small font-weight-bold text-muted">Sujet de la discussion</label>
+                    <input type="text" name="subject" class="form-control rounded-lg mb-3" placeholder="Ex: Répartition des tâches, Réunion labo..." required>
+
+                    <label class="small font-weight-bold text-muted">Premier message</label>
+                    <textarea name="firstMessage" class="form-control rounded-lg" rows="4" placeholder="Votre message pour l'équipe..." required></textarea>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="submit" class="btn btn-primary btn-block rounded-pill font-weight-bold py-2">Démarrer la discussion</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

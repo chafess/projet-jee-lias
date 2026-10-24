@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="header">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white py-2 shadow-sm sticky-top">
+        <div class="container-fluid px-lg-5">
+
+            <!-- 1. LOGO -->
+            <a class="navbar-brand font-weight-bold" th:href="@{/}" style="font-size: 1.4rem;">
+                <span style="color: #004a99;">laboratoire</span> <span style="color: #28a745;">IA</span>
+            </a>
+
+            <!-- Bouton mobile -->
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mainNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- 2. MENU CENTRAL (AVEC CONDITIONS SUR LES MODULES) -->
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item"><a class="nav-link mx-2 custom-nav-link" th:href="@{/}">Accueil</a></li>
+
+                    <!-- ACTUALITÉS : Masqué si moduleFeed est désactivé -->
+                    <li class="nav-item" th:if="${modules == null or modules.moduleFeed}">
+                        <a class="nav-link mx-2 custom-nav-link" th:href="@{/#actualites}">Actualités</a>
+                    </li>
+
+                    <li class="nav-item"><a class="nav-link mx-2 custom-nav-link" th:href="@{/#equipe}">Équipe</a></li>
+
+                    <!-- PUBLICATIONS : Masqué si modulePubs est désactivé -->
+                    <li class="nav-item" th:if="${modules == null or modules.modulePubs}">
+                        <a class="nav-link mx-2 custom-nav-link" th:href="@{/publications}">Publications</a>
+                    </li>
+
+                    <!-- ÉVÉNEMENTS : Masqué si moduleEvents est désactivé -->
+                    <li class="nav-item" th:if="${modules == null or modules.moduleEvents}">
+                        <a class="nav-link mx-2 custom-nav-link" th:href="@{/events}">Événements</a>
+                    </li>
+                </ul>
+
+                <!-- 3. BARRE DE RECHERCHE (CONSERVÉE À 100%) -->
+                <form th:action="@{/search}" method="get" class="form-inline my-2 my-lg-0 mr-3">
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <i class="fas fa-search" style="position: absolute; left: 12px; color: #9ca3af; font-size: 0.85rem; pointer-events: none;"></i>
+                        <input type="text" name="query"
+                               class="form-control"
+                               placeholder="Rechercher..."
+                               style="background-color: #f3f4f6; border: 1px solid transparent; border-radius: 20px; padding-left: 35px; font-size: 0.85rem; width: 200px; height: 38px; transition: 0.2s;"
+                               onfocus="this.style.backgroundColor='white'; this.style.borderColor='#e5e7eb'; this.style.width='240px';"
+                               onblur="this.style.backgroundColor='#f3f4f6'; this.style.borderColor='transparent'; this.style.width='200px';"
+                               required>
+                    </div>
+                </form>
+
+                <!-- 4. ZONE DE CONNEXION (DYNAMIQUE - CONSERVÉE À 100%) -->
+                <div class="d-flex align-items-center">
+
+                    <!-- CAS 1 : NON CONNECTÉ (Affiche Login + Join) -->
+                    <div th:if="${session.loggedInUser == null}" class="d-flex align-items-center">
+                        <a th:href="@{/login}" class="btn btn-elegant-outline mr-2">Se connecter</a>
+                        <a th:href="@{/apply}" class="btn btn-success btn-sm rounded-pill px-4 font-weight-bold shadow-sm">
+                            Join Our Lab
+                        </a>
+                    </div>
+
+                    <!-- CAS 2 : CONNECTÉ (Affiche le Dropdown de profil) -->
+                    <div th:if="${session.loggedInUser != null}" class="dropdown">
+                        <div class="d-flex align-items-center" id="userMenu" data-toggle="dropdown" style="cursor:pointer">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                 style="width:35px; height:35px; font-weight:bold; font-size: 0.8rem;"
+                                 th:text="${session.loggedInUser.firstName.substring(0,1).toUpperCase()}">DU</div>
+                            <i class="fas fa-chevron-down ml-2 text-muted" style="font-size: 0.7rem;"></i>
+                        </div>
+                        <div class="dropdown-menu dropdown-menu-right shadow border-0 rounded-lg mt-3" style="width: 260px;">
+                            <div class="p-3 text-center border-bottom">
+                                <h6 class="mb-0 font-weight-bold" th:text="|${session.loggedInUser.firstName} ${session.loggedInUser.lastName}|">User Name</h6>
+                                <small class="text-muted" th:text="${session.loggedInUser.role}">Role</small>
+                            </div>
+                            <a class="dropdown-item py-2" th:href="@{/dashboard}"><i class="fas fa-th-large mr-2 text-muted"></i> Mon Dashboard</a>
+                            <a class="dropdown-item py-2" th:href="@{/profile}"><i class="fas fa-user-circle mr-2 text-muted"></i> Mon Profil</a>
+
+                            <!-- Section Admin visible uniquement pour le Directeur -->
+                            <div th:if="${session.loggedInUser.role == 'DIRECTOR'}">
+                                <div class="bg-light py-2 px-3 small font-weight-bold text-muted text-uppercase" style="letter-spacing: 1px;">Administration</div>
+                                <a class="dropdown-item py-2" th:href="@{/directeur/approvals}"><i class="fas fa-check-circle mr-2 text-success"></i> Valider Adhésions</a>
+                                <a class="dropdown-item py-2" th:href="@{/directeur/material-requests}"><i class="fas fa-tools mr-2 text-primary"></i> Gérer Matériel</a>
+                                <a class="dropdown-item py-2" th:href="@{/directeur/report}"><i class="fas fa-file-invoice mr-2 text-info"></i> Rapport Annuel</a>
+                            </div>
+
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item py-2 text-danger" th:href="@{/logout}"><i class="fas fa-sign-out-alt mr-2"></i> Déconnexion</a>
+                        </div>
+                    </div>
+
+                </div> <!-- Fin zone de connexion -->
+            </div>
+        </div>
+    </nav>
+
+    <style>
+        /* Style élégant pour le bouton Se connecter */
+        .btn-elegant-outline {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 6px 20px;
+            font-weight: 500;
+            color: #1a202c;
+            background: transparent;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        .btn-elegant-outline:hover { background: #f8fafc; border-color: #cbd5e0; text-decoration: none; color: #004a99; }
+
+        .custom-nav-link { color: #4a5568 !important; font-weight: 500; }
+        .custom-nav-link:hover { color: #004a99 !important; }
+    </style>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</div>
+</html>

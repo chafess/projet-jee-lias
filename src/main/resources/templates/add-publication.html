@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>LIAS - Share Research</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body class="bg-light">
+<div th:replace="~{fragments/navbar :: header}"></div>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h5 class="font-weight-bold mb-4">Share Research Publication</h5>
+                    <form th:action="@{/publication/save}" th:object="${publication}" method="post">
+                        <div class="form-group">
+                            <label class="small font-weight-bold">Publication Title</label>
+                            <input type="text" th:field="*{title}" class="form-control rounded-pill" placeholder="e.g. Deep Learning in Big Data" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label class="small font-weight-bold">Year</label>
+                                <input type="number" th:field="*{year}" class="form-control rounded-pill" value="2024">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="small font-weight-bold">Type</label>
+                                <select th:field="*{type}" class="form-control rounded-pill">
+                                    <option value="Journal">Journal Article</option>
+                                    <option value="Conference">Conference Paper</option>
+                                    <option value="Workshop">Workshop</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="small font-weight-bold">Author (Validated Member)</label>
+                            <select th:field="*{author}" class="form-control rounded-pill">
+                                <option th:each="m : ${members}" th:value="${m.id}" th:text="|${m.firstName} ${m.lastName}|"></option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block rounded-pill font-weight-bold">Post Publication</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

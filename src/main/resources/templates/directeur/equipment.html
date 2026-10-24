@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>LIAS - Gestion du Matériel</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<!-- 1. Insertion de la Sidebar (ici 'equipment' est l'onglet actif) -->
+<div th:replace="~{fragments/sidebar ::sidebar(user=${user}, activePage='equipment')}"></div>
+
+<div class="main-content-area">
+    <div class="container-fluid">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="font-weight-bold">Laboratory Inventory</h2>
+            <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-toggle="modal" data-target="#addMaterialModal">
+                <i class="fas fa-plus mr-2"></i> Add New Material
+            </button>
+        </div>
+
+        <!-- Tableau du matériel (Section 14) -->
+        <div class="card border-0 shadow-sm p-4 rounded-lg bg-white">
+            <table class="table table-hover mb-0">
+                <thead class="text-muted small">
+                <tr>
+                    <th>MATERIAL / ITEM</th>
+                    <th>REFERENCE (S/N)</th>
+                    <th>STATUS</th>
+                    <th>ASSIGNED TO</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="eq : ${allEquipment}">
+                    <td>
+                        <i class="fas fa-laptop text-muted mr-2"></i>
+                        <span class="font-weight-bold" th:text="${eq.name}"></span>
+                    </td>
+                    <td th:text="${eq.reference}"></td>
+                    <td>
+                        <span th:if="${eq.user == null}" class="badge badge-success px-2 py-1">In Stock</span>
+                        <span th:if="${eq.user != null}" class="badge badge-warning text-white px-2 py-1">Assigned</span>
+                    </td>
+                    <td>
+                        <div th:if="${eq.user != null}" class="d-flex align-items-center">
+                            <img th:src="@{'https://ui-avatars.com/api/?name=' + ${eq.user.firstName} + '+' + ${eq.user.lastName} + '&background=random'}"
+                                 class="rounded-circle mr-2" width="25">
+                            <span class="small" th:text="|${eq.user.firstName} ${eq.user.lastName}|"></span>
+                        </div>
+                        <span th:if="${eq.user == null}" class="text-muted small">---</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL POUR AJOUTER DU MATÉRIEL (Fenêtre popup) -->
+<div class="modal fade" id="addMaterialModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title font-weight-bold">Register Equipment</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form th:action="@{/directeur/equipment/save}" th:object="${newEquipment}" method="post">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="small font-weight-bold">Equipment Name</label>
+                        <input type="text" th:field="*{name}" class="form-control" placeholder="e.g. MacBook Pro M3" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">Serial Number</label>
+                        <input type="text" th:field="*{reference}" class="form-control" placeholder="LIAS-2025-XXXX">
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">Assign to (Active Members only)</label>
+                        <select th:field="*{user}" class="form-control">
+                            <option value="">-- Leave in Stock --</option>
+                            <option th:each="m : ${members}" th:value="${m.id}" th:text="|${m.firstName} ${m.lastName}|"></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Save Equipment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>LIAS - Meetings & PV</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root { --lias-blue: #004a99; --lias-purple: #7c4dff; --lias-bg: #f8f9fa; }
+        body { background-color: var(--lias-bg); font-family: 'Segoe UI', sans-serif; }
+        .main-content-area { margin-left: 280px; padding: 40px; }
+        .btn-add-purple { background-color: var(--lias-purple); color: white !important; border-radius: 12px; padding: 12px 25px; font-weight: 700; border: none; box-shadow: 0 4px 15px rgba(124, 77, 255, 0.3); transition: 0.3s; margin-bottom: 30px; cursor: pointer; }
+        .stat-box { border-radius: 20px; border: none; background: white; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); }
+        .stat-number { font-size: 2.2rem; font-weight: 800; color: #1a1a1a; display: block; }
+        .card-table { border-radius: 25px; border: none; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+        .badge-scheduled { background-color: #fff9db; color: #f59f00; border-radius: 8px; padding: 5px 12px; font-weight: 700; }
+        .badge-completed { background-color: #e3faf3; color: #0ca678; border-radius: 8px; padding: 5px 12px; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div th:replace="~{fragments/sidebar ::sidebar(user=${user}, activePage='meetings')}"></div>
+
+<div class="main-content-area">
+    <div class="container-fluid">
+        <h2 class="font-weight-bold">Meetings & PV</h2>
+        <p class="text-muted small mb-4">Manage laboratory meetings and archive official minutes</p>
+
+        <!-- BOUTON QUI OUVRE LA MODAL -->
+        <button type="button" class="btn btn-add-purple" data-toggle="modal" data-target="#meetingModal">
+            + Create Meeting
+        </button>
+
+        <!-- STATS ROW -->
+        <div class="row mb-5">
+            <div class="col-md-4">
+                <div class="stat-box d-flex align-items-center">
+                    <div class="bg-light rounded-circle p-3 mr-3"><i class="fas fa-calendar-alt text-muted"></i></div>
+                    <div><span class="stat-number" th:text="${totalMeetings}">0</span><small class="text-muted font-weight-bold">Total Meetings</small></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-box d-flex align-items-center">
+                    <div class="bg-light rounded-circle p-3 mr-3" style="background: #fff9db !important;"><i class="fas fa-clock text-warning"></i></div>
+                    <div><span class="stat-number" th:text="${upcomingMeetings}">0</span><small class="text-muted font-weight-bold">Upcoming</small></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-box d-flex align-items-center">
+                    <div class="bg-light rounded-circle p-3 mr-3" style="background: #f3f0ff !important;"><i class="fas fa-file-pdf text-primary"></i></div>
+                    <div><span class="stat-number" th:text="${archivedPVs}">0</span><small class="text-muted font-weight-bold">Archived PVs</small></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="card card-table p-4">
+            <table class="table">
+                <thead class="small text-muted">
+                <tr>
+                    <th>DATE & TIME</th>
+                    <th>ORDRE DU JOUR</th>
+                    <th>STATUS</th>
+                    <th class="text-right">ACTIONS</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="m : ${meetings}">
+                    <td class="small font-weight-bold" th:text="${m.dateTime}"></td>
+                    <td>
+                        <strong th:text="${m.title}"></strong><br>
+                        <small class="text-muted" th:text="${m.description}"></small>
+                    </td>
+                    <td>
+                        <span th:class="${m.status == 'Completed' ? 'badge-completed' : 'badge-scheduled'}" th:text="${m.status}"></span>
+                    </td>
+                    <td>
+                        <!-- Affiche le lien PDF si le PV existe -->
+                        <a th:if="${m.pvPath != null}" th:href="@{'/uploads/' + ${m.pvPath}}" target="_blank" class="pdf-link">
+                            <i class="fas fa-file-pdf"></i> View PV
+                        </a>
+                        <span th:if="${m.pvPath == null}" class="text-muted small">No PV yet</span>
+                    </td>
+                    <td class="text-right">
+                        <!-- Le bouton Edit ouvre maintenant une Modal spécifique -->
+                        <button class="btn btn-light btn-sm rounded-circle shadow-sm" data-toggle="modal" th:data-target="'#editMeeting' + ${m.id}">
+                            <i class="fas fa-pen" style="font-size: 0.8rem;"></i>
+                        </button>
+
+                        <!-- MODAL DE MODIFICATION (Une par ligne) -->
+                        <div class="modal fade text-left" th:id="'editMeeting' + ${m.id}" tabindex="-1" role="dialog">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                                    <div class="modal-header border-0">
+                                        <h5 class="modal-title font-weight-bold">Update Meeting & Upload PV</h5>
+                                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                    </div>
+                                    <form th:action="@{'/admin/meetings/update/' + ${m.id}}" method="post" enctype="multipart/form-data">
+                                        <div class="modal-body p-4">
+                                            <div class="form-group">
+                                                <label class="small font-weight-bold text-muted">CHANGE STATUS</label>
+                                                <select name="status" class="form-control border-0 bg-light" style="border-radius: 10px;">
+                                                    <option value="Scheduled" th:selected="${m.status == 'Scheduled'}">Scheduled</option>
+                                                    <option value="Completed" th:selected="${m.status == 'Completed'}">Completed</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="small font-weight-bold text-muted">UPLOAD PV (PDF)</label>
+                                                <input type="file" name="pvFile" class="form-control-file">
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-0">
+                                            <button type="submit" class="btn btn-primary btn-block rounded-pill font-weight-bold py-2">Save Changes</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- LA FENÊTRE SURGISSANTE (MODAL) -->
+<div class="modal fade" id="meetingModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title font-weight-bold">Schedule New Meeting</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <!--<form th:action="@{/admin/meetings/save}" th:object="${newMeeting}" method="post">-->
+            <form th:action="@{/directeur/meetings/save}" th:object="${newMeeting}" method="post">
+
+               <div class="modal-body p-4">
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-muted">MEETING TITLE</label>
+                        <input type="text" th:field="*{title}" class="form-control border-0 bg-light" style="height:50px; border-radius:12px;" placeholder="e.g. Annual Strategy 2026" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-muted">ORDER OF THE DAY (DESCRIPTION)</label>
+                        <input type="text" th:field="*{description}" class="form-control border-0 bg-light" style="height:50px; border-radius:12px;" placeholder="e.g. Budget planning + Partnerships">
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-muted">DATE & TIME</label>
+                        <input type="datetime-local" th:field="*{dateTime}" class="form-control border-0 bg-light" style="height:50px; border-radius:12px;" required>
+                    </div>
+                </div>
+                <!--<div class="modal-footer border-0 p-4">
+                    <button type="submit" class="btn btn-primary btn-block rounded-pill font-weight-bold py-3 shadow">Create Meeting</button>
+                </div>-->
+                <!-- Bouton de création protégé -->
+                <!--<button th:if="${!readOnly}" class="btn btn-primary" data-toggle="modal" data-target="#meetingModal">
+                    <i class="fas fa-plus"></i> Créer une réunion
+                </button>
+
+               Message d'information si en lecture seule -->
+                <!--<div th:if="${readOnly}" class="alert alert-info">
+                    <i class="fas fa-eye"></i> Mode lecture seule : seul le directeur peut créer de nouvelles réunions.
+                </div>-->
+                <!-- Remplacez votre balise th:if actuelle par celle-ci (plus sûre) -->
+                <button th:if="${readOnly != null and !readOnly}" class="btn btn-primary" data-toggle="modal" data-target="#meetingModal">
+                    <i class="fas fa-plus"></i> Créer une réunion
+                </button>
+
+                <div th:if="${readOnly != null and readOnly}" class="alert alert-info">
+                    <i class="fas fa-eye"></i> Mode lecture seule.
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS OBLIGATOIRES POUR LA MODAL -->
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

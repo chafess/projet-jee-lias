@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Équipes | LIAS</title>
+</head>
+<body>
+
+<section id="equipe" th:fragment="section-equipe" class="py-2">
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h3 class="font-weight-bold mb-1" style="color: #111827;">Équipes de recherche</h3>
+            <p class="text-muted small mb-0">Organisation scientifique et direction du laboratoire</p>
+        </div>
+        <a th:href="@{/members}" class="small font-weight-bold text-dark" style="text-decoration: underline;">
+            Voir l'annuaire complet <i class="fas fa-arrow-right ml-1"></i>
+        </a>
+    </div>
+
+    <p class="small font-weight-bold text-muted text-uppercase mb-3" style="letter-spacing: 1px;">Pôle de Direction & Responsables</p>
+
+    <!-- GRILLE DYNAMIQUE DE LA DIRECTION (Depuis la base de données) -->
+    <div class="row mb-3">
+        <!-- 1. CARTE DU DIRECTEUR ACTUEL -->
+        <div class="col-lg-4 col-md-6 mb-4" th:if="${currentDirector != null}">
+            <div class="card border-0 shadow-sm p-4 text-center h-100" style="border-radius: 16px; background: #ffffff; border: 1px solid #e5e7eb !important;">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center text-dark font-weight-bold shadow-sm" style="width: 50px; height: 50px; border-radius: 50%; background: #f3f4f6; font-size: 1rem; border: 1px solid #d1d5db;"
+                     th:text="${currentDirector.firstName.substring(0,1).toUpperCase() + currentDirector.lastName.substring(0,1).toUpperCase()}">
+                    DIR
+                </div>
+                <h6 class="font-weight-bold mb-1 text-dark" style="font-size: 1rem;" th:text="${'Pr. ' + currentDirector.firstName + ' ' + currentDirector.lastName}">Nom Directeur</h6>
+                <p class="small font-weight-bold mb-1 text-muted">Directeur du Laboratoire</p>
+                <small class="text-secondary" style="font-size: 0.75rem;" th:text="${currentDirector.email}">Email</small>
+            </div>
+        </div>
+
+        <!-- 2. CARTES DES CHEFS D'ÉQUIPE ACTIFS -->
+        <div class="col-lg-4 col-md-6 mb-4" th:each="mandat : ${activeTeamLeaders}">
+            <div class="card border-0 shadow-sm p-4 text-center h-100" style="border-radius: 16px; background: #ffffff; border: 1px solid #e5e7eb !important;">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center text-dark font-weight-bold shadow-sm" style="width: 50px; height: 50px; border-radius: 50%; background: #f3f4f6; font-size: 1rem; border: 1px solid #d1d5db;"
+                     th:text="${mandat.member.firstName.substring(0,1).toUpperCase() + mandat.member.lastName.substring(0,1).toUpperCase()}">
+                    CH
+                </div>
+                <h6 class="font-weight-bold mb-1 text-dark" style="font-size: 1rem;" th:text="${'Dr. ' + mandat.member.firstName + ' ' + mandat.member.lastName}">Nom Chef</h6>
+                <p class="small font-weight-bold mb-1 text-muted" th:text="${'Chef — ' + (mandat.team != null ? mandat.team.name : 'Équipe')}">Chef d'équipe</p>
+                <small class="text-secondary" style="font-size: 0.75rem;" th:text="${mandat.member.email}">Email</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message si aucun responsable n'est trouvé -->
+    <div th:if="${currentDirector == null and (activeTeamLeaders == null or activeTeamLeaders.empty)}" class="text-center py-4 text-muted small bg-white rounded-lg border">
+        Aucun responsable de direction enregistré pour le moment.
+    </div>
+
+</section>
+
+</body>
+</html>
