@@ -22,9 +22,9 @@ Application web d'entreprise dédiée à la centralisation, la traçabilité et 
 
 * **Gouvernance & Mandats :** Gestion temporelle des mandats (Directeur, Chefs d'équipe) avec clôture automatique et historisation des périodes.
 * **Cycle de Vie des Membres & Départs :** 
-  - Candidatures et adhésions en ligne validées par le Directeur en mandat.
-  - **Règle d'or :** Comptes retraités gelés définitivement (connexion bloquée, patrimoine scientifique préservé), anciens membres désactivés et réactivables.
-* **Production Scientifique :** Partage, consultation et filtrage par auteur/année/équipe des publications, avec protection contre l'usurpation (IDOR).
+  * Candidatures et adhésions en ligne validées par le Directeur en mandat.
+  * **Règle d'or :** Comptes retraités gelés définitivement (connexion bloquée, patrimoine scientifique préservé), anciens membres désactivés et réactivables.
+* **Production Scientifique :** Partage, consultation et filtrage par auteur/année/équipe des publications, avec protection contre l'usurpation (contrôle d'autorisation auteur).
 * **Archivage Documentaire :** Dépôt et consultation sécurisés de documents officiels classés par types (Conventions, PV, Financements, Attestations, Programmes).
 * **Rapport Annuel Automatisé :** Bilan consolidé en temps réel (effectifs, publications, événements, matériels) avec fonction d'impression et export PDF officiel.
 * **Gestion Équitable du Matériel :** Suivi des stocks en direct et gestion de la priorité (prioritaire pour ceux qui n'ont rien reçu).
@@ -50,7 +50,7 @@ Application web d'entreprise dédiée à la centralisation, la traçabilité et 
 * **Backend :** Java 17, Spring Boot 3 (Spring MVC, Spring Data JPA)
 * **Frontend :** Thymeleaf, Bootstrap 4, FontAwesome
 * **Base de données :** MySQL (`lias_db`)
-* **Architecture :** MVC, `@ControllerAdvice`, `HandlerInterceptor`
+* **Architecture :** Modèle-Vue-Contrôleur (MVC), `@ControllerAdvice`, `HandlerInterceptor`
 * **Gestionnaire de dépendances :** Maven
 
 ---
@@ -71,13 +71,24 @@ C:/lias_uploads/
 
 3. Lancer l'application
 
-Exécuter l'application depuis IntelliJ IDEA ou en ligne de commande :
+Exécuter l'application depuis IntelliJ IDEA ou en ligne de commande à la racine
+du projet :
 
 ./mvnw spring-boot:run
 
 L'application est accessible à l'adresse : http://localhost:8082
 
+🔑 Comptes de Démonstration (Mot de passe unique : 123)
+
+| Rôle                 | Email               | Description                                               |
+| :------------------- | :------------------ | :-------------------------------------------------------- |
+| **Administrateur**   | `admin@lias.ma`     | Paramétrage dynamique des modules, gestion des comptes    |
+| **Directeur**        | `directeur@lias.ma` | Validation des adhésions, rapport annuel, conventions     |
+| **Vice-Directeur**   | `vicedir@lias.ma`   | Supervision globale en lecture seule                      |
+| **Membre Permanent** | `permanent@lias.ma` | Gestion des publications, besoins en matériel             |
+| **Doctorant**        | `phd@lias.ma`       | Production scientifique (modules internes restreints)     |
+| **Membre Associé**   | `associe@lias.ma`   | Collaborateur externe avec accès aux événements autorisés |
+
 
 ---
-
 
